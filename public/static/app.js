@@ -586,7 +586,20 @@ function toggleNode(nodeId) {
 
 async function selectNode(nodeId) {
   selectedNodeId = nodeId
-  renderTree()
+  
+  // 逆ツリー表示中はツリーを再描画しない（ルートが切り替わるのを防ぐ）
+  if (treeViewMode === 'normal') {
+    renderTree()
+  } else {
+    // 逆ツリーモードでは選択状態のハイライトのみ更新
+    document.querySelectorAll('.tree-item').forEach(item => {
+      item.classList.remove('active')
+    })
+    const selectedItem = document.querySelector(`.tree-item[data-node-id="${nodeId}"]`)
+    if (selectedItem) {
+      selectedItem.classList.add('active')
+    }
+  }
   
   const node = await fetchNodeById(nodeId)
   if (node) {
