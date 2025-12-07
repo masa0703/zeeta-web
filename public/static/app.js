@@ -996,30 +996,33 @@ async function handlePaste(e) {
 function getVisibleNodeIds() {
   const visibleIds = []
   
-  // ツリーコンテナ内の全ての.tree-itemを取得
-  const treeItems = document.querySelectorAll('#tree-container .tree-item')
-  
-  treeItems.forEach(item => {
-    const nodeId = parseInt(item.dataset.nodeId)
+  // ツリーコンテナから再帰的に走査して、表示順序通りにノードIDを取得
+  function traverseTree(element) {
+    // data-node-groupを持つ要素を探す
+    const nodeGroups = element.children
     
-    // このノードが折りたたまれた親の子孫かどうかチェック
-    let isVisible = true
-    let currentElement = item.parentElement
-    
-    while (currentElement && currentElement.id !== 'tree-container') {
-      // .tree-childrenクラスを持ち、かつexpandedクラスがない場合は非表示
-      if (currentElement.classList.contains('tree-children') && 
-          !currentElement.classList.contains('expanded')) {
-        isVisible = false
-        break
+    for (let i = 0; i < nodeGroups.length; i++) {
+      const group = nodeGroups[i]
+      
+      // .tree-itemを探す
+      const treeItem = group.querySelector(':scope > .tree-item')
+      if (treeItem) {
+        const nodeId = parseInt(treeItem.dataset.nodeId)
+        visibleIds.push(nodeId)
+        
+        // 子要素(.tree-children)があり、かつexpandedの場合は再帰的に走査
+        const childrenContainer = group.querySelector(':scope > .tree-children.expanded')
+        if (childrenContainer) {
+          traverseTree(childrenContainer)
+        }
       }
-      currentElement = currentElement.parentElement
     }
-    
-    if (isVisible) {
-      visibleIds.push(nodeId)
-    }
-  })
+  }
+  
+  const treeContainer = document.getElementById('tree-container')
+  if (treeContainer) {
+    traverseTree(treeContainer)
+  }
   
   return visibleIds
 }
