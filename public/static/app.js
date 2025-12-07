@@ -2,24 +2,69 @@
 // グローバル状態管理
 // ===============================
 let nodes = []
+let relations = []
 let selectedNodeId = null
 let expandedNodes = new Set()
 let searchQuery = ''
 let searchResults = []
+let clipboard = null // コピーしたノードのID
 
 // ===============================
 // API呼び出し
 // ===============================
 async function fetchNodes() {
   try {
-    const response = await axios.get('/api/nodes')
-    if (response.data.success) {
-      nodes = response.data.data
+    const [nodesRes, relationsRes] = await Promise.all([
+      axios.get('/api/nodes'),
+      axios.get('/api/relations')
+    ])
+    
+    if (nodesRes.data.success && relationsRes.data.success) {
+      nodes = nodesRes.data.data
+      relations = relationsRes.data.data
       renderTree()
     }
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
     alert('ノードの取得に失敗しました')
+  }
+}
+
+async function addRelation(parentId, childId) {
+  try {
+    const response = await axios.post('/api/relations', {
+      parent_node_id: parentId,
+      child_node_id: childId
+    })
+    
+    if (response.data.success) {
+      await fetchNodes()
+      return true
+    }
+  } catch (error) {
+    console.error('Failed to add relation:', error)
+    if (error.response?.data?.error === 'Circular reference detected') {
+      alert('循環参照です。この操作はできません。')
+    } else if (error.response?.data?.error === 'Relation already exists') {
+      alert('この親子関係はすでに存在します')
+    } else {
+      alert('親子関係の追加に失敗しました')
+    }
+    return false
+  }
+}
+
+async function removeRelation(parentId, childId) {
+  try {
+    const response = await axios.delete(`/api/relations/${parentId}/${childId}`)
+    if (response.data.success) {
+      await fetchNodes()
+      return true
+    }
+  } catch (error) {
+    console.error('Failed to remove relation:', error)
+    alert('親子関係の削除に失敗しました')
+    return false
   }
 }
 
@@ -206,18 +251,29 @@ function escapeRegex(str) {
 function buildTree() {
   const nodeMap = new Map()
   const rootNodes = []
+  const childNodeIds = new Set()
   
   // ノードをマップに格納
   nodes.forEach(node => {
-    nodeMap.set(node.id, { ...node, children: [] })
+    nodeMap.set(node.id, { ...node, children: [], parents: [] })
   })
   
-  // 親子関係を構築
+  // リレーションベースで親子関係を構築
+  relations.forEach(rel => {
+    const parent = nodeMap.get(rel.parent_node_id)
+    const child = nodeMap.get(rel.child_node_id)
+    
+    if (parent && child) {
+      parent.children.push(child)
+      child.parents.push(parent)
+      childNodeIds.add(rel.child_node_id)
+    }
+  })
+  
+  // 親を持たないノードをルートとする
   nodes.forEach(node => {
-    if (node.parent_id === null) {
+    if (!childNodeIds.has(node.id)) {
       rootNodes.push(nodeMap.get(node.id))
-    } else if (nodeMap.has(node.parent_id)) {
-      nodeMap.get(node.parent_id).children.push(nodeMap.get(node.id))
     }
   })
   
@@ -248,11 +304,19 @@ function renderTree() {
   setupDragAndDrop()
 }
 
-function renderTreeNode(node, level) {
+function renderTreeNode(node, level, visitedNodes = new Set()) {
+  // 循環参照防止
+  if (visitedNodes.has(node.id)) {
+    return `<div class="text-xs text-gray-400 ml-${level * 5}">[循環参照]</div>`
+  }
+  
+  visitedNodes.add(node.id)
+  
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const isSelected = selectedNodeId === node.id
   const isSearchResult = searchResults.some(r => r.id === node.id)
+  const hasMultipleParents = node.parents && node.parents.length > 1
   const indent = level * 20
   
   const title = searchQuery ? highlightText(node.title, searchQuery) : escapeHtml(node.title)
@@ -261,8 +325,7 @@ function renderTreeNode(node, level) {
     <div data-node-group="${node.id}">
       <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
-           data-node-id="${node.id}"
-           data-parent-id="${node.parent_id || 'null'}">
+           data-node-id="${node.id}">
         <i class="fas fa-grip-vertical text-gray-300 mr-2 cursor-move drag-handle"></i>
         ${hasChildren ? `
           <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} text-gray-400 mr-2 w-3 toggle-icon" 
@@ -272,6 +335,11 @@ function renderTreeNode(node, level) {
         `}
         <i class="fas fa-file-alt text-blue-500 mr-2"></i>
         <span class="flex-1 text-sm">${title}</span>
+        ${hasMultipleParents ? `
+          <span class="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded mr-2" title="複数の親を持つノード">
+            <i class="fas fa-link"></i> ${node.parents.length}
+          </span>
+        ` : ''}
         <button class="add-child-btn text-gray-400 hover:text-blue-500 text-xs px-2" 
                 data-node-id="${node.id}" 
                 title="子ノードを追加">
@@ -280,7 +348,7 @@ function renderTreeNode(node, level) {
       </div>
       ${hasChildren ? `
         <div class="tree-children ${isExpanded ? 'expanded' : ''}" data-parent="${node.id}">
-          ${node.children.map(child => renderTreeNode(child, level + 1)).join('')}
+          ${node.children.map(child => renderTreeNode(child, level + 1, new Set(visitedNodes))).join('')}
         </div>
       ` : ''}
     </div>
@@ -441,8 +509,8 @@ function enableNodeDropZones(draggedNodeId) {
       // 対象ノードを展開
       expandedNodes.add(targetNodeId)
       
-      // 子ノードとして移動
-      await moveNode(draggedNodeId, targetNodeId, 0)
+      // 親子関係を追加（リレーションベース）
+      await addRelation(targetNodeId, draggedNodeId)
     })
   })
 }
@@ -479,14 +547,17 @@ async function selectNode(nodeId) {
   
   const node = await fetchNodeById(nodeId)
   if (node) {
-    renderEditor(node)
+    // 親ノードを取得
+    const parentsRes = await axios.get(`/api/nodes/${nodeId}/parents`)
+    const parents = parentsRes.data.success ? parentsRes.data.data : []
+    renderEditor(node, parents)
   }
 }
 
 // ===============================
 // エディタ表示
 // ===============================
-function renderEditor(node = null) {
+function renderEditor(node = null, parents = []) {
   const editorPanel = document.getElementById('editor-panel')
   
   if (!node) {
@@ -494,10 +565,33 @@ function renderEditor(node = null) {
       <div class="text-center text-gray-400 py-12">
         <i class="fas fa-arrow-left text-4xl mb-4"></i>
         <p>左側のノードを選択してください</p>
+        <p class="text-sm mt-2">Cmd+C でコピー、Cmd+V で貼り付け</p>
       </div>
     `
     return
   }
+  
+  const parentsHtml = parents.length > 0 ? `
+    <div class="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm font-medium text-purple-900">
+          <i class="fas fa-sitemap mr-1"></i>親ノード (${parents.length})
+        </label>
+      </div>
+      <div class="space-y-1">
+        ${parents.map(p => `
+          <div class="flex items-center justify-between text-sm bg-white px-2 py-1 rounded">
+            <span class="text-purple-700">${escapeHtml(p.title)}</span>
+            <button class="remove-parent-btn text-red-500 hover:text-red-700 text-xs" 
+                    data-parent-id="${p.id}"
+                    title="この親子関係を削除">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : ''
   
   editorPanel.innerHTML = `
     <div class="mb-6">
@@ -507,6 +601,8 @@ function renderEditor(node = null) {
           <i class="fas fa-trash mr-2"></i>削除
         </button>
       </div>
+      
+      ${parentsHtml}
       
       <div class="space-y-4">
         <!-- タイトル -->
@@ -567,6 +663,17 @@ function renderEditor(node = null) {
   // イベントリスナーを設定
   document.getElementById('save-node-btn').addEventListener('click', () => saveCurrentNode())
   document.getElementById('delete-node-btn').addEventListener('click', () => deleteCurrentNode())
+  
+  // 親削除ボタン
+  document.querySelectorAll('.remove-parent-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const parentId = parseInt(btn.dataset.parentId)
+      if (confirm('この親子関係を削除しますか？')) {
+        await removeRelation(parentId, selectedNodeId)
+        await selectNode(selectedNodeId) // リロード
+      }
+    })
+  })
 }
 
 async function saveCurrentNode() {
@@ -720,6 +827,59 @@ function setupPaneResize() {
 }
 
 // ===============================
+// クリップボード機能（Command+C/V）
+// ===============================
+function handleCopy(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'c' && selectedNodeId) {
+    // エディタ内のテキスト選択を妨げない
+    if (document.activeElement.tagName === 'INPUT' || 
+        document.activeElement.tagName === 'TEXTAREA') {
+      return
+    }
+    
+    e.preventDefault()
+    clipboard = selectedNodeId
+    
+    // 視覚的フィードバック
+    const notification = document.createElement('div')
+    notification.textContent = 'ノードをコピーしました'
+    notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50'
+    document.body.appendChild(notification)
+    
+    setTimeout(() => notification.remove(), 2000)
+  }
+}
+
+async function handlePaste(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'v' && clipboard && selectedNodeId) {
+    // エディタ内のテキスト選択を妨げない
+    if (document.activeElement.tagName === 'INPUT' || 
+        document.activeElement.tagName === 'TEXTAREA') {
+      return
+    }
+    
+    e.preventDefault()
+    
+    // clipboardのノードをselectedNodeIdの子として追加
+    const success = await addRelation(selectedNodeId, clipboard)
+    
+    if (success) {
+      // 視覚的フィードバック
+      const notification = document.createElement('div')
+      notification.textContent = '親子関係を追加しました'
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50'
+      document.body.appendChild(notification)
+      
+      setTimeout(() => notification.remove(), 2000)
+      
+      // 親ノードを展開
+      expandedNodes.add(selectedNodeId)
+      renderTree()
+    }
+  }
+}
+
+// ===============================
 // 初期化
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -732,6 +892,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // ペインリサイズ
   setupPaneResize()
+  
+  // キーボードショートカット
+  document.addEventListener('keydown', handleCopy)
+  document.addEventListener('keydown', handlePaste)
   
   // 初期データ読み込み
   fetchNodes()

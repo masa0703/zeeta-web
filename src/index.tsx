@@ -48,12 +48,15 @@ app.get('/api/nodes/:id', async (c) => {
   }
 })
 
-// 子ノード取得
+// 子ノード取得（リレーションテーブル使用）
 app.get('/api/nodes/:id/children', async (c) => {
   try {
     const id = c.req.param('id')
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM nodes WHERE parent_id = ? ORDER BY position, created_at'
+      `SELECT n.* FROM nodes n
+       INNER JOIN node_relations nr ON n.id = nr.child_node_id
+       WHERE nr.parent_node_id = ?
+       ORDER BY n.position, n.created_at`
     ).bind(id).all()
     
     return c.json({ success: true, data: results })
@@ -62,11 +65,43 @@ app.get('/api/nodes/:id/children', async (c) => {
   }
 })
 
-// ルートノード取得
+// 親ノード取得（複数親対応）
+app.get('/api/nodes/:id/parents', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const { results } = await c.env.DB.prepare(
+      `SELECT n.* FROM nodes n
+       INNER JOIN node_relations nr ON n.id = nr.parent_node_id
+       WHERE nr.child_node_id = ?
+       ORDER BY n.position, n.created_at`
+    ).bind(id).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ルートノード取得（親を持たないノード）
 app.get('/api/nodes/root/list', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM nodes WHERE parent_id IS NULL ORDER BY position, created_at'
+      `SELECT * FROM nodes
+       WHERE id NOT IN (SELECT child_node_id FROM node_relations)
+       ORDER BY position, created_at`
+    ).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// すべてのリレーション取得
+app.get('/api/relations', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM node_relations ORDER BY created_at'
     ).all()
     
     return c.json({ success: true, data: results })
@@ -142,7 +177,7 @@ app.put('/api/nodes/:id', async (c) => {
   }
 })
 
-// ノード削除
+// ノード削除（リレーションも自動削除される）
 app.delete('/api/nodes/:id', async (c) => {
   try {
     const id = c.req.param('id')
@@ -160,6 +195,101 @@ app.delete('/api/nodes/:id', async (c) => {
     return c.json({ success: false, error: String(error) }, 500)
   }
 })
+
+// 親子関係を追加（循環参照チェック付き）
+app.post('/api/relations', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { parent_node_id, child_node_id } = body
+    
+    if (!parent_node_id || !child_node_id) {
+      return c.json({ success: false, error: 'parent_node_id and child_node_id are required' }, 400)
+    }
+    
+    // 同じノード同士はNG
+    if (parent_node_id === child_node_id) {
+      return c.json({ success: false, error: 'Cannot create self-reference' }, 400)
+    }
+    
+    // 循環参照チェック
+    const hasCircular = await checkCircularReference(c.env.DB, parent_node_id, child_node_id)
+    if (hasCircular) {
+      return c.json({ success: false, error: 'Circular reference detected' }, 400)
+    }
+    
+    // 既存のリレーションチェック
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(parent_node_id, child_node_id).first()
+    
+    if (existing) {
+      return c.json({ success: false, error: 'Relation already exists' }, 400)
+    }
+    
+    // リレーション追加
+    const result = await c.env.DB.prepare(
+      'INSERT INTO node_relations (parent_node_id, child_node_id) VALUES (?, ?) RETURNING *'
+    ).bind(parent_node_id, child_node_id).first()
+    
+    return c.json({ success: true, data: result }, 201)
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 親子関係を削除
+app.delete('/api/relations/:parent_id/:child_id', async (c) => {
+  try {
+    const parentId = c.req.param('parent_id')
+    const childId = c.req.param('child_id')
+    
+    const result = await c.env.DB.prepare(
+      'DELETE FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(parentId, childId).run()
+    
+    if (result.meta.changes === 0) {
+      return c.json({ success: false, error: 'Relation not found' }, 404)
+    }
+    
+    return c.json({ success: true, message: 'Relation deleted' })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 循環参照チェック関数
+async function checkCircularReference(db: D1Database, parentId: number, childId: number): Promise<boolean> {
+  // childIdがparentIdの祖先かどうかをチェック
+  const ancestors = await getAncestors(db, parentId)
+  return ancestors.includes(childId)
+}
+
+// 祖先ノードをすべて取得（再帰的）
+async function getAncestors(db: D1Database, nodeId: number): Promise<number[]> {
+  const ancestors: number[] = []
+  const visited = new Set<number>()
+  
+  const queue: number[] = [nodeId]
+  
+  while (queue.length > 0) {
+    const currentId = queue.shift()!
+    
+    if (visited.has(currentId)) continue
+    visited.add(currentId)
+    
+    const { results } = await db.prepare(
+      'SELECT parent_node_id FROM node_relations WHERE child_node_id = ?'
+    ).bind(currentId).all()
+    
+    for (const row of results) {
+      const parentId = row.parent_node_id as number
+      ancestors.push(parentId)
+      queue.push(parentId)
+    }
+  }
+  
+  return ancestors
+}
 
 // ノードの親変更
 app.patch('/api/nodes/:id/parent', async (c) => {
