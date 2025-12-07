@@ -369,6 +369,9 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
   const isExpanded = expandedNodes.has(node.id)
   // パスが一致する場合のみ選択状態とする
   const isSelected = selectedNodePath === currentPath
+  // 同じIDだがパスが違う場合は重複ノード
+  const isDuplicate = selectedNodeId === node.id && !isSelected
+  
   const isSearchResult = searchResults.some(r => r.id === node.id)
   // 通常モードのみ複数親バッジを表示
   const hasMultipleParents = treeViewMode === 'normal' && node.parents && node.parents.length > 1
@@ -382,7 +385,7 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
   
   let html = `
     <div data-node-group="${node.id}">
-      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
+      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
            data-node-id="${node.id}"
            data-node-path="${currentPath}">
@@ -670,9 +673,8 @@ async function selectNode(nodeId, nodePath = null) {
   
   // 再描画せずDOM上の選択状態のみ更新
   // (通常モード: カーソル飛び防止, 逆ツリーモード: ルート維持のため)
-  document.querySelectorAll('.tree-item.active').forEach(item => {
-    item.classList.remove('active')
-  })
+  document.querySelectorAll('.tree-item.active').forEach(item => item.classList.remove('active'))
+  document.querySelectorAll('.tree-item.duplicate-active').forEach(item => item.classList.remove('duplicate-active'))
   
   if (selectedNodePath) {
     const targetElement = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
@@ -688,6 +690,15 @@ async function selectNode(nodeId, nodePath = null) {
       selectedNodeElement = targetElement
       selectedNodePath = targetElement.dataset.nodePath
     }
+  }
+  
+  // 同一ノードのハイライト（選択中のノード以外で同じIDを持つもの）
+  if (selectedNodeId) {
+    document.querySelectorAll(`.tree-item[data-node-id="${selectedNodeId}"]`).forEach(item => {
+      if (item.dataset.nodePath !== selectedNodePath) {
+        item.classList.add('duplicate-active')
+      }
+    })
   }
   
   const node = await fetchNodeById(nodeId)
