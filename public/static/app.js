@@ -586,12 +586,61 @@ function toggleNode(nodeId) {
   renderTree()
 }
 
+function updateSelectedNodeElement() {
+  if (!selectedNodeId || !selectedNodeElement) return
+  
+  // 現在のselectedNodeElementの位置（親との関係）を記憶
+  const oldElement = selectedNodeElement
+  let parentPath = []
+  let current = oldElement
+  
+  // ルートまでの親のnode-idを記録
+  while (current && current.id !== 'tree-container') {
+    if (current.dataset && current.dataset.nodeId) {
+      parentPath.unshift(parseInt(current.dataset.nodeId))
+    }
+    current = current.parentElement
+  }
+  
+  // 同じ親パスを持つ新しい要素を見つける
+  const visibleElements = getVisibleNodeElements()
+  
+  // 親パスが一致する要素を探す
+  for (const element of visibleElements) {
+    if (parseInt(element.dataset.nodeId) !== selectedNodeId) continue
+    
+    // この要素の親パスを取得
+    let elementParentPath = []
+    let curr = element
+    while (curr && curr.id !== 'tree-container') {
+      if (curr.dataset && curr.dataset.nodeId) {
+        elementParentPath.unshift(parseInt(curr.dataset.nodeId))
+      }
+      curr = curr.parentElement
+    }
+    
+    // 親パスが一致する場合、これが正しい要素
+    if (JSON.stringify(parentPath) === JSON.stringify(elementParentPath)) {
+      selectedNodeElement = element
+      return
+    }
+  }
+  
+  // 見つからない場合は、同じnodeIdの最初の要素を使う
+  const fallbackElement = visibleElements.find(el => parseInt(el.dataset.nodeId) === selectedNodeId)
+  if (fallbackElement) {
+    selectedNodeElement = fallbackElement
+  }
+}
+
 async function selectNode(nodeId) {
   selectedNodeId = nodeId
   
   // 逆ツリー表示中はツリーを再描画しない（ルートが切り替わるのを防ぐ）
   if (treeViewMode === 'normal') {
     renderTree()
+    // renderTree()後、selectedNodeElementを新しいDOM要素に更新
+    updateSelectedNodeElement()
   } else {
     // 逆ツリーモードでは選択状態のハイライトのみ更新
     document.querySelectorAll('.tree-item').forEach(item => {
@@ -600,6 +649,10 @@ async function selectNode(nodeId) {
     const selectedItem = document.querySelector(`.tree-item[data-node-id="${nodeId}"]`)
     if (selectedItem) {
       selectedItem.classList.add('active')
+      // 逆ツリーモードでもselectedNodeElementを更新
+      if (selectedNodeElement && selectedNodeElement.dataset.nodeId === selectedItem.dataset.nodeId) {
+        selectedNodeElement = selectedItem
+      }
     }
   }
   
