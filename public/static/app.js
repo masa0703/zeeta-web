@@ -4,6 +4,7 @@
 let nodes = []
 let relations = []
 let selectedNodeId = null
+let selectedNodeElement = null // 現在選択されているDOM要素
 let expandedNodes = new Set()
 let searchQuery = ''
 let searchResults = []
@@ -412,6 +413,7 @@ function attachTreeEventListeners() {
       }
       
       const nodeId = parseInt(item.dataset.nodeId)
+      selectedNodeElement = item
       selectNode(nodeId)
     })
   })
@@ -993,10 +995,10 @@ async function handlePaste(e) {
 // ===============================
 // キーボードナビゲーション（矢印キー）
 // ===============================
-function getVisibleNodeIds() {
-  const visibleIds = []
+function getVisibleNodeElements() {
+  const visibleElements = []
   
-  // ツリーコンテナから再帰的に走査して、表示順序通りにノードIDを取得
+  // ツリーコンテナから再帰的に走査して、表示順序通りにノード要素を取得
   function traverseTree(element) {
     // data-node-groupを持つ要素を探す
     const nodeGroups = element.children
@@ -1007,8 +1009,7 @@ function getVisibleNodeIds() {
       // .tree-itemを探す
       const treeItem = group.querySelector(':scope > .tree-item')
       if (treeItem) {
-        const nodeId = parseInt(treeItem.dataset.nodeId)
-        visibleIds.push(nodeId)
+        visibleElements.push(treeItem)
         
         // 子要素(.tree-children)があり、かつexpandedの場合は再帰的に走査
         const childrenContainer = group.querySelector(':scope > .tree-children.expanded')
@@ -1024,7 +1025,7 @@ function getVisibleNodeIds() {
     traverseTree(treeContainer)
   }
   
-  return visibleIds
+  return visibleElements
 }
 
 function handleArrowKeys(e) {
@@ -1041,30 +1042,49 @@ function handleArrowKeys(e) {
   
   e.preventDefault()
   
-  const visibleIds = getVisibleNodeIds()
-  if (visibleIds.length === 0) return
+  const visibleElements = getVisibleNodeElements()
+  if (visibleElements.length === 0) return
   
   // 選択されているノードがない場合は最初のノードを選択
-  if (!selectedNodeId) {
-    selectNode(visibleIds[0])
+  if (!selectedNodeElement || !selectedNodeId) {
+    const firstElement = visibleElements[0]
+    const firstNodeId = parseInt(firstElement.dataset.nodeId)
+    selectedNodeElement = firstElement
+    selectNode(firstNodeId)
     return
   }
   
-  const currentIndex = visibleIds.indexOf(selectedNodeId)
+  // 現在選択されている要素のインデックスを見つける
+  const currentIndex = visibleElements.indexOf(selectedNodeElement)
+  if (currentIndex === -1) {
+    // 現在の選択要素が見つからない場合は最初を選択
+    const firstElement = visibleElements[0]
+    const firstNodeId = parseInt(firstElement.dataset.nodeId)
+    selectedNodeElement = firstElement
+    selectNode(firstNodeId)
+    return
+  }
+  
   const selectedNode = nodes.find(n => n.id === selectedNodeId)
   
   switch (e.key) {
     case 'ArrowUp':
       // 上のノードを選択
       if (currentIndex > 0) {
-        selectNode(visibleIds[currentIndex - 1])
+        const prevElement = visibleElements[currentIndex - 1]
+        const prevNodeId = parseInt(prevElement.dataset.nodeId)
+        selectedNodeElement = prevElement
+        selectNode(prevNodeId)
       }
       break
       
     case 'ArrowDown':
       // 下のノードを選択
-      if (currentIndex < visibleIds.length - 1) {
-        selectNode(visibleIds[currentIndex + 1])
+      if (currentIndex < visibleElements.length - 1) {
+        const nextElement = visibleElements[currentIndex + 1]
+        const nextNodeId = parseInt(nextElement.dataset.nodeId)
+        selectedNodeElement = nextElement
+        selectNode(nextNodeId)
       }
       break
       
