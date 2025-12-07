@@ -281,11 +281,14 @@ function buildTree() {
   return rootNodes
 }
 
-// 逆ツリー構築（子→親の方向）
+// 逆ツリー構築（選択ノード→親の方向）
 function buildReverseTree() {
+  // 選択されたノードがない場合は空配列を返す
+  if (!selectedNodeId) {
+    return []
+  }
+  
   const nodeMap = new Map()
-  const leafNodes = []
-  const parentNodeIds = new Set()
   
   // ノードをマップに格納
   nodes.forEach(node => {
@@ -301,18 +304,12 @@ function buildReverseTree() {
       // 逆ツリーでは、子ノードの children に親ノードを追加
       child.children.push(parent)
       parent.parents.push(child)
-      parentNodeIds.add(rel.parent_node_id)
     }
   })
   
-  // 子を持たないノード（リーフノード）をルートとする
-  nodes.forEach(node => {
-    if (!parentNodeIds.has(node.id)) {
-      leafNodes.push(nodeMap.get(node.id))
-    }
-  })
-  
-  return leafNodes
+  // 選択されたノードのみをルートとする
+  const selectedNode = nodeMap.get(selectedNodeId)
+  return selectedNode ? [selectedNode] : []
 }
 
 function renderTree() {
@@ -320,13 +317,24 @@ function renderTree() {
   const tree = treeViewMode === 'reverse' ? buildReverseTree() : buildTree()
   
   if (tree.length === 0) {
-    treeContainer.innerHTML = `
-      <div class="text-center text-gray-400 py-8">
-        <i class="fas fa-folder-open text-3xl mb-2"></i>
-        <p>ノードがありません</p>
-        <p class="text-sm">右上の「ルート追加」ボタンから作成できます</p>
-      </div>
-    `
+    if (treeViewMode === 'reverse') {
+      treeContainer.innerHTML = `
+        <div class="text-center text-gray-400 py-8">
+          <i class="fas fa-arrow-left text-3xl mb-2"></i>
+          <p>逆ツリー表示</p>
+          <p class="text-sm">左側のノードを選択してください</p>
+          <p class="text-xs mt-2">選択したノードから親方向にツリーが表示されます</p>
+        </div>
+      `
+    } else {
+      treeContainer.innerHTML = `
+        <div class="text-center text-gray-400 py-8">
+          <i class="fas fa-folder-open text-3xl mb-2"></i>
+          <p>ノードがありません</p>
+          <p class="text-sm">右上の「ルート追加」ボタンから作成できます</p>
+        </div>
+      `
+    }
     return
   }
   
