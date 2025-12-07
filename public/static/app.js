@@ -991,6 +991,93 @@ async function handlePaste(e) {
 }
 
 // ===============================
+// キーボードナビゲーション（矢印キー）
+// ===============================
+function getVisibleNodeIds() {
+  const visibleIds = []
+  const treeItems = document.querySelectorAll('.tree-item')
+  
+  treeItems.forEach(item => {
+    const nodeId = parseInt(item.dataset.nodeId)
+    // 表示されているノードのみを取得（親が折りたたまれていないもの）
+    const nodeGroup = item.closest('[data-node-group]')
+    if (nodeGroup) {
+      const parentContainer = nodeGroup.parentElement
+      if (!parentContainer || !parentContainer.classList.contains('tree-children') || 
+          parentContainer.classList.contains('expanded')) {
+        visibleIds.push(nodeId)
+      }
+    } else {
+      visibleIds.push(nodeId)
+    }
+  })
+  
+  return visibleIds
+}
+
+function handleArrowKeys(e) {
+  // 入力フィールドにフォーカスがある場合はスキップ
+  if (document.activeElement.tagName === 'INPUT' || 
+      document.activeElement.tagName === 'TEXTAREA') {
+    return
+  }
+  
+  // 矢印キーでない場合はスキップ
+  if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    return
+  }
+  
+  e.preventDefault()
+  
+  const visibleIds = getVisibleNodeIds()
+  if (visibleIds.length === 0) return
+  
+  // 選択されているノードがない場合は最初のノードを選択
+  if (!selectedNodeId) {
+    selectNode(visibleIds[0])
+    return
+  }
+  
+  const currentIndex = visibleIds.indexOf(selectedNodeId)
+  const selectedNode = nodes.find(n => n.id === selectedNodeId)
+  
+  switch (e.key) {
+    case 'ArrowUp':
+      // 上のノードを選択
+      if (currentIndex > 0) {
+        selectNode(visibleIds[currentIndex - 1])
+      }
+      break
+      
+    case 'ArrowDown':
+      // 下のノードを選択
+      if (currentIndex < visibleIds.length - 1) {
+        selectNode(visibleIds[currentIndex + 1])
+      }
+      break
+      
+    case 'ArrowRight':
+      // 子ノードがある場合は展開
+      const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
+      if (hasChildren) {
+        if (!expandedNodes.has(selectedNodeId)) {
+          expandedNodes.add(selectedNodeId)
+          renderTree()
+        }
+      }
+      break
+      
+    case 'ArrowLeft':
+      // 展開されている場合は折りたたむ
+      if (expandedNodes.has(selectedNodeId)) {
+        expandedNodes.delete(selectedNodeId)
+        renderTree()
+      }
+      break
+  }
+}
+
+// ===============================
 // 初期化
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1022,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // キーボードショートカット
   document.addEventListener('keydown', handleCopy)
   document.addEventListener('keydown', handlePaste)
+  document.addEventListener('keydown', handleArrowKeys)
   
   // 初期データ読み込み
   fetchNodes()
