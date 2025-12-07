@@ -995,14 +995,28 @@ async function handlePaste(e) {
 // ===============================
 function getVisibleNodeIds() {
   const visibleIds = []
-  const treeItems = document.querySelectorAll('.tree-item')
+  
+  // ツリーコンテナ内の全ての.tree-itemを取得
+  const treeItems = document.querySelectorAll('#tree-container .tree-item')
   
   treeItems.forEach(item => {
-    // 実際に画面に表示されているかチェック
-    const isVisible = item.offsetParent !== null
+    const nodeId = parseInt(item.dataset.nodeId)
+    
+    // このノードが折りたたまれた親の子孫かどうかチェック
+    let isVisible = true
+    let currentElement = item.parentElement
+    
+    while (currentElement && currentElement.id !== 'tree-container') {
+      // .tree-childrenクラスを持ち、かつexpandedクラスがない場合は非表示
+      if (currentElement.classList.contains('tree-children') && 
+          !currentElement.classList.contains('expanded')) {
+        isVisible = false
+        break
+      }
+      currentElement = currentElement.parentElement
+    }
     
     if (isVisible) {
-      const nodeId = parseInt(item.dataset.nodeId)
       visibleIds.push(nodeId)
     }
   })
