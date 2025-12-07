@@ -418,6 +418,8 @@ app.get('/', (c) => {
           .markdown-preview th { background-color: #f3f4f6; font-weight: bold; }
           .tab-btn { cursor: pointer; padding: 0.5rem 1rem; border-bottom: 2px solid transparent; }
           .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
+          .tree-view-tab { cursor: pointer; transition: all 0.2s; }
+          .tree-view-tab.active { border-bottom-color: #3b82f6 !important; color: #3b82f6; background-color: #eff6ff; }
         </style>
     </head>
     <body class="bg-gray-50">
@@ -445,6 +447,18 @@ app.get('/', (c) => {
                         </button>
                     </div>
                     <div id="search-results" class="mt-2 text-xs text-gray-500 hidden"></div>
+                </div>
+                
+                <!-- ツリー表示タブ -->
+                <div class="mb-3 border-b border-gray-200">
+                    <div class="flex gap-1">
+                        <button class="tree-view-tab active px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="normal">
+                            <i class="fas fa-stream mr-1"></i>通常
+                        </button>
+                        <button class="tree-view-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="reverse">
+                            <i class="fas fa-level-up-alt mr-1"></i>逆ツリー
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="tree-container"></div>

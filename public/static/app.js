@@ -8,6 +8,7 @@ let expandedNodes = new Set()
 let searchQuery = ''
 let searchResults = []
 let clipboard = null // コピーしたノードのID
+let treeViewMode = 'normal' // 'normal' or 'reverse'
 
 // ===============================
 // API呼び出し
@@ -280,9 +281,43 @@ function buildTree() {
   return rootNodes
 }
 
+// 逆ツリー構築（子→親の方向）
+function buildReverseTree() {
+  const nodeMap = new Map()
+  const leafNodes = []
+  const parentNodeIds = new Set()
+  
+  // ノードをマップに格納
+  nodes.forEach(node => {
+    nodeMap.set(node.id, { ...node, children: [], parents: [] })
+  })
+  
+  // リレーションベースで親子関係を構築（逆向き）
+  relations.forEach(rel => {
+    const parent = nodeMap.get(rel.parent_node_id)
+    const child = nodeMap.get(rel.child_node_id)
+    
+    if (parent && child) {
+      // 逆ツリーでは、子ノードの children に親ノードを追加
+      child.children.push(parent)
+      parent.parents.push(child)
+      parentNodeIds.add(rel.parent_node_id)
+    }
+  })
+  
+  // 子を持たないノード（リーフノード）をルートとする
+  nodes.forEach(node => {
+    if (!parentNodeIds.has(node.id)) {
+      leafNodes.push(nodeMap.get(node.id))
+    }
+  })
+  
+  return leafNodes
+}
+
 function renderTree() {
   const treeContainer = document.getElementById('tree-container')
-  const tree = buildTree()
+  const tree = treeViewMode === 'reverse' ? buildReverseTree() : buildTree()
   
   if (tree.length === 0) {
     treeContainer.innerHTML = `
@@ -947,6 +982,21 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // ペインリサイズ
   setupPaneResize()
+  
+  // ツリー表示モード切り替え
+  document.querySelectorAll('.tree-view-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const viewMode = tab.dataset.view
+      
+      // タブのアクティブ状態を切り替え
+      document.querySelectorAll('.tree-view-tab').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+      
+      // 表示モードを切り替え
+      treeViewMode = viewMode
+      renderTree()
+    })
+  })
   
   // キーボードショートカット
   document.addEventListener('keydown', handleCopy)
