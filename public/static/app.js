@@ -998,16 +998,11 @@ function getVisibleNodeIds() {
   const treeItems = document.querySelectorAll('.tree-item')
   
   treeItems.forEach(item => {
-    const nodeId = parseInt(item.dataset.nodeId)
-    // 表示されているノードのみを取得（親が折りたたまれていないもの）
-    const nodeGroup = item.closest('[data-node-group]')
-    if (nodeGroup) {
-      const parentContainer = nodeGroup.parentElement
-      if (!parentContainer || !parentContainer.classList.contains('tree-children') || 
-          parentContainer.classList.contains('expanded')) {
-        visibleIds.push(nodeId)
-      }
-    } else {
+    // 実際に画面に表示されているかチェック
+    const isVisible = item.offsetParent !== null
+    
+    if (isVisible) {
+      const nodeId = parseInt(item.dataset.nodeId)
       visibleIds.push(nodeId)
     }
   })
