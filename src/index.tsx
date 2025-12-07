@@ -244,6 +244,11 @@ app.get('/', (c) => {
           .tree-item.drag-over {
             border-top: 2px solid #3b82f6;
           }
+          .tree-item.drop-target {
+            background-color: #dbeafe !important;
+            border: 2px dashed #3b82f6;
+            border-radius: 4px;
+          }
           .tree-children {
             max-height: 0;
             overflow: hidden;
@@ -262,9 +267,9 @@ app.get('/', (c) => {
         </style>
     </head>
     <body class="bg-gray-50">
-        <div class="flex h-screen">
+        <div class="flex h-screen" id="main-container">
             <!-- 左ペイン: ツリー表示 -->
-            <div class="w-1/3 bg-white border-r border-gray-200 p-4 overflow-y-auto">
+            <div class="bg-white border-r border-gray-200 p-4 overflow-y-auto" id="tree-pane" style="width: 33.333%">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-sitemap mr-2"></i>
@@ -290,9 +295,12 @@ app.get('/', (c) => {
                 
                 <div id="tree-container"></div>
             </div>
+            
+            <!-- リサイズハンドル -->
+            <div id="resize-handle" class="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors"></div>
 
             <!-- 右ペイン: ノード詳細 -->
-            <div class="flex-1 p-6 overflow-y-auto">
+            <div class="flex-1 p-6 overflow-y-auto" id="editor-pane">
                 <div id="editor-panel" class="bg-white rounded-lg shadow p-6">
                     <div class="text-center text-gray-400 py-12">
                         <i class="fas fa-arrow-left text-4xl mb-4"></i>

@@ -335,10 +335,27 @@ function setupDragAndDrop() {
     group: 'nested',
     fallbackOnBody: true,
     swapThreshold: 0.65,
+    onStart: function(evt) {
+      const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+      window.currentDraggedNodeId = nodeId
+      
+      // ノード上へのドロップ検出を有効化
+      setTimeout(() => enableNodeDropZones(nodeId), 100)
+    },
     onEnd: async function(evt) {
+      disableNodeDropZones()
+      
+      // ノード上にドロップされた場合は処理をスキップ
+      if (window.droppedOnNode) {
+        window.droppedOnNode = false
+        window.currentDraggedNodeId = null
+        return
+      }
+      
       const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
       const newIndex = evt.newIndex
       
+      window.currentDraggedNodeId = null
       await moveNode(nodeId, null, newIndex)
     }
   })
@@ -354,15 +371,97 @@ function setupDragAndDrop() {
       group: 'nested',
       fallbackOnBody: true,
       swapThreshold: 0.65,
+      onStart: function(evt) {
+        const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+        window.currentDraggedNodeId = nodeId
+        
+        // ノード上へのドロップ検出を有効化
+        setTimeout(() => enableNodeDropZones(nodeId), 100)
+      },
       onEnd: async function(evt) {
+        disableNodeDropZones()
+        
+        // ノード上にドロップされた場合は処理をスキップ
+        if (window.droppedOnNode) {
+          window.droppedOnNode = false
+          window.currentDraggedNodeId = null
+          return
+        }
+        
         const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
         const newIndex = evt.newIndex
         const newParentId = evt.to.dataset.parent ? parseInt(evt.to.dataset.parent) : null
         
+        window.currentDraggedNodeId = null
         await moveNode(nodeId, newParentId, newIndex)
       }
     })
   })
+}
+
+// ノード上へのドロップゾーンを有効化
+function enableNodeDropZones(draggedNodeId) {
+  document.querySelectorAll('.tree-item').forEach(item => {
+    const nodeId = parseInt(item.dataset.nodeId)
+    
+    // 自分自身や子孫へはドロップ不可
+    if (nodeId === draggedNodeId || isDescendant(draggedNodeId, nodeId)) {
+      return
+    }
+    
+    // ドラッグオーバーイベント
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      item.classList.add('drop-target')
+    })
+    
+    // ドラッグリーブイベント
+    item.addEventListener('dragleave', (e) => {
+      if (!item.contains(e.relatedTarget)) {
+        item.classList.remove('drop-target')
+      }
+    })
+    
+    // ドロップイベント
+    item.addEventListener('drop', async (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      item.classList.remove('drop-target')
+      
+      const targetNodeId = nodeId
+      const draggedNodeId = window.currentDraggedNodeId
+      
+      if (!draggedNodeId || draggedNodeId === targetNodeId) return
+      
+      // フラグを設定してSortableのonEndをスキップ
+      window.droppedOnNode = true
+      
+      // 対象ノードを展開
+      expandedNodes.add(targetNodeId)
+      
+      // 子ノードとして移動
+      await moveNode(draggedNodeId, targetNodeId, 0)
+    })
+  })
+}
+
+function disableNodeDropZones() {
+  document.querySelectorAll('.tree-item').forEach(item => {
+    item.classList.remove('drop-target')
+    // イベントリスナーを削除するため、クローンして置き換え
+    const newItem = item.cloneNode(true)
+    item.parentNode.replaceChild(newItem, item)
+  })
+}
+
+function isDescendant(ancestorId, nodeId) {
+  const node = nodes.find(n => n.id === nodeId)
+  if (!node) return false
+  if (node.parent_id === ancestorId) return true
+  if (node.parent_id === null) return false
+  return isDescendant(ancestorId, node.parent_id)
 }
 
 function toggleNode(nodeId) {
@@ -571,6 +670,56 @@ function formatDate(dateString) {
 }
 
 // ===============================
+// ペインリサイズ
+// ===============================
+function setupPaneResize() {
+  const resizeHandle = document.getElementById('resize-handle')
+  const treePane = document.getElementById('tree-pane')
+  const editorPane = document.getElementById('editor-pane')
+  const container = document.getElementById('main-container')
+  
+  let isResizing = false
+  let startX = 0
+  let startWidth = 0
+  
+  resizeHandle.addEventListener('mousedown', (e) => {
+    isResizing = true
+    startX = e.clientX
+    startWidth = treePane.offsetWidth
+    
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    
+    e.preventDefault()
+  })
+  
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return
+    
+    const containerWidth = container.offsetWidth
+    const deltaX = e.clientX - startX
+    const newWidth = startWidth + deltaX
+    
+    // 最小幅と最大幅を設定（20% - 80%）
+    const minWidth = containerWidth * 0.2
+    const maxWidth = containerWidth * 0.8
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      const percentage = (newWidth / containerWidth) * 100
+      treePane.style.width = `${percentage}%`
+    }
+  })
+  
+  document.addEventListener('mouseup', () => {
+    if (isResizing) {
+      isResizing = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  })
+}
+
+// ===============================
 // 初期化
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -580,6 +729,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 検索機能
   document.getElementById('search-input').addEventListener('input', handleSearchInput)
   document.getElementById('clear-search-btn').addEventListener('click', clearSearch)
+  
+  // ペインリサイズ
+  setupPaneResize()
   
   // 初期データ読み込み
   fetchNodes()
