@@ -353,7 +353,7 @@ app.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>アウトラインエディタ</title>
+        <title>Zeeta Web</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -394,6 +394,27 @@ app.get('/', (c) => {
             background-color: #fef08a;
             font-weight: 600;
           }
+          .markdown-preview {
+            line-height: 1.6;
+            color: #333;
+          }
+          .markdown-preview h1 { font-size: 2em; font-weight: bold; margin-top: 0.67em; margin-bottom: 0.67em; }
+          .markdown-preview h2 { font-size: 1.5em; font-weight: bold; margin-top: 0.83em; margin-bottom: 0.83em; }
+          .markdown-preview h3 { font-size: 1.17em; font-weight: bold; margin-top: 1em; margin-bottom: 1em; }
+          .markdown-preview p { margin-top: 1em; margin-bottom: 1em; }
+          .markdown-preview ul, .markdown-preview ol { margin-left: 2em; margin-top: 1em; margin-bottom: 1em; }
+          .markdown-preview li { margin-top: 0.5em; margin-bottom: 0.5em; }
+          .markdown-preview code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+          .markdown-preview pre { background-color: #f4f4f4; padding: 1em; border-radius: 4px; overflow-x: auto; }
+          .markdown-preview pre code { background-color: transparent; padding: 0; }
+          .markdown-preview blockquote { border-left: 4px solid #ddd; padding-left: 1em; color: #666; margin: 1em 0; }
+          .markdown-preview a { color: #3b82f6; text-decoration: underline; }
+          .markdown-preview img { max-width: 100%; height: auto; }
+          .markdown-preview table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+          .markdown-preview th, .markdown-preview td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .markdown-preview th { background-color: #f3f4f6; font-weight: bold; }
+          .tab-btn { cursor: pointer; padding: 0.5rem 1rem; border-bottom: 2px solid transparent; }
+          .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
         </style>
     </head>
     <body class="bg-gray-50">
@@ -403,7 +424,7 @@ app.get('/', (c) => {
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-sitemap mr-2"></i>
-                        アウトライン
+                        Zeeta Web
                     </h2>
                     <button id="add-root-btn" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
                         <i class="fas fa-plus mr-1"></i>ルート追加
@@ -442,6 +463,7 @@ app.get('/', (c) => {
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>

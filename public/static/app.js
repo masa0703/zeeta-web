@@ -615,13 +615,28 @@ function renderEditor(node = null, parents = []) {
                  class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
         
-        <!-- 内容 -->
+        <!-- 内容 (Markdown対応) -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            <i class="fas fa-align-left mr-1"></i>内容
-          </label>
-          <textarea id="node-content" rows="12"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">${escapeHtml(node.content || '')}</textarea>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700">
+              <i class="fas fa-align-left mr-1"></i>内容 (Markdown対応)
+            </label>
+            <div class="flex gap-2 text-xs">
+              <button class="tab-btn active" data-tab="edit">
+                <i class="fas fa-edit mr-1"></i>編集
+              </button>
+              <button class="tab-btn" data-tab="preview">
+                <i class="fas fa-eye mr-1"></i>プレビュー
+              </button>
+            </div>
+          </div>
+          <div id="content-edit-tab">
+            <textarea id="node-content" rows="12"
+                      class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm">${escapeHtml(node.content || '')}</textarea>
+          </div>
+          <div id="content-preview-tab" class="hidden">
+            <div id="markdown-preview" class="markdown-preview w-full min-h-[300px] px-3 py-2 border border-gray-300 rounded bg-gray-50"></div>
+          </div>
         </div>
         
         <!-- 作成者 -->
@@ -673,6 +688,43 @@ function renderEditor(node = null, parents = []) {
         await selectNode(selectedNodeId) // リロード
       }
     })
+  })
+  
+  // タブ切り替え（編集/プレビュー）
+  const tabBtns = document.querySelectorAll('.tab-btn')
+  const editTab = document.getElementById('content-edit-tab')
+  const previewTab = document.getElementById('content-preview-tab')
+  const markdownPreview = document.getElementById('markdown-preview')
+  const contentTextarea = document.getElementById('node-content')
+  
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab
+      
+      // タブボタンのアクティブ状態を切り替え
+      tabBtns.forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      
+      if (tab === 'edit') {
+        editTab.classList.remove('hidden')
+        previewTab.classList.add('hidden')
+      } else if (tab === 'preview') {
+        editTab.classList.add('hidden')
+        previewTab.classList.remove('hidden')
+        
+        // Markdownをレンダリング
+        const content = contentTextarea.value || ''
+        markdownPreview.innerHTML = marked.parse(content)
+      }
+    })
+  })
+  
+  // リアルタイムプレビュー（プレビュータブが開いているときのみ）
+  contentTextarea.addEventListener('input', () => {
+    if (!previewTab.classList.contains('hidden')) {
+      const content = contentTextarea.value || ''
+      markdownPreview.innerHTML = marked.parse(content)
+    }
   })
 }
 
