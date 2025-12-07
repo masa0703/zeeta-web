@@ -1,10 +1,9 @@
-name = "webapp"
-main = "src/index.tsx"
+name = "zeeta2"
 compatibility_date = "2025-12-07"
 pages_build_output_dir = "./dist"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "webapp-production"
-database_id = "local"
+database_name = "zeeta2-production"
+database_id = "17a62bfc-fdfa-4246-b9f6-ac289716805e"

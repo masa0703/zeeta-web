@@ -741,8 +741,9 @@ async function addChildNode(parentId) {
   const author = prompt('作成者名を入力してください:', 'Admin')
   if (!author || !author.trim()) return
   
+  // ノード作成（parent_idなし）
   const node = await createNode({
-    parent_id: parentId,
+    parent_id: null,
     title: title.trim(),
     content: '',
     author: author.trim(),
@@ -750,6 +751,8 @@ async function addChildNode(parentId) {
   })
   
   if (node) {
+    // 親子関係を追加
+    await addRelation(parentId, node.id)
     expandedNodes.add(parentId)
     await selectNode(node.id)
   }
