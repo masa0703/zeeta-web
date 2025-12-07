@@ -4,6 +4,8 @@
 let nodes = []
 let selectedNodeId = null
 let expandedNodes = new Set()
+let searchQuery = ''
+let searchResults = []
 
 // ===============================
 // API呼び出し
@@ -83,6 +85,121 @@ async function deleteNode(id) {
   }
 }
 
+async function moveNode(nodeId, newParentId, newPosition) {
+  try {
+    const response = await axios.patch(`/api/nodes/${nodeId}/parent`, {
+      parent_id: newParentId,
+      position: newPosition
+    })
+    if (response.data.success) {
+      await fetchNodes()
+      return true
+    }
+  } catch (error) {
+    console.error('Failed to move node:', error)
+    if (error.response?.data?.error === 'Circular reference detected') {
+      alert('循環参照は許可されていません')
+    } else {
+      alert('ノードの移動に失敗しました')
+    }
+    return false
+  }
+}
+
+async function searchNodes(query) {
+  try {
+    const response = await axios.get(`/api/search?q=${encodeURIComponent(query)}`)
+    if (response.data.success) {
+      return response.data.data
+    }
+  } catch (error) {
+    console.error('Failed to search nodes:', error)
+    return []
+  }
+}
+
+// ===============================
+// 検索機能
+// ===============================
+let searchTimeout = null
+
+function handleSearchInput(event) {
+  const query = event.target.value.trim()
+  
+  // クリアボタンの表示/非表示
+  const clearBtn = document.getElementById('clear-search-btn')
+  if (query) {
+    clearBtn.classList.remove('hidden')
+  } else {
+    clearBtn.classList.add('hidden')
+  }
+  
+  // デバウンス処理
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(async () => {
+    await performSearch(query)
+  }, 300)
+}
+
+async function performSearch(query) {
+  searchQuery = query
+  
+  if (!query) {
+    searchResults = []
+    document.getElementById('search-results').classList.add('hidden')
+    renderTree()
+    return
+  }
+  
+  searchResults = await searchNodes(query)
+  
+  // 検索結果表示
+  const resultsDiv = document.getElementById('search-results')
+  if (searchResults.length > 0) {
+    resultsDiv.textContent = `${searchResults.length}件見つかりました`
+    resultsDiv.classList.remove('hidden')
+    
+    // 検索結果のノードを展開
+    searchResults.forEach(node => {
+      expandParents(node.id)
+    })
+  } else {
+    resultsDiv.textContent = '見つかりませんでした'
+    resultsDiv.classList.remove('hidden')
+  }
+  
+  renderTree()
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = ''
+  document.getElementById('clear-search-btn').classList.add('hidden')
+  document.getElementById('search-results').classList.add('hidden')
+  searchQuery = ''
+  searchResults = []
+  renderTree()
+}
+
+function expandParents(nodeId) {
+  const node = nodes.find(n => n.id === nodeId)
+  if (node && node.parent_id) {
+    expandedNodes.add(node.parent_id)
+    expandParents(node.parent_id)
+  }
+}
+
+function highlightText(text, query) {
+  if (!query || !text) return escapeHtml(text)
+  
+  const escapedText = escapeHtml(text)
+  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi')
+  return escapedText.replace(regex, '<span class="search-highlight">$1</span>')
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 // ===============================
 // ツリー表示
 // ===============================
@@ -126,19 +243,27 @@ function renderTree() {
   
   // イベントリスナーを再設定
   attachTreeEventListeners()
+  
+  // ドラッグ&ドロップの設定
+  setupDragAndDrop()
 }
 
 function renderTreeNode(node, level) {
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const isSelected = selectedNodeId === node.id
+  const isSearchResult = searchResults.some(r => r.id === node.id)
   const indent = level * 20
   
+  const title = searchQuery ? highlightText(node.title, searchQuery) : escapeHtml(node.title)
+  
   let html = `
-    <div>
-      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''}" 
+    <div data-node-group="${node.id}">
+      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
-           data-node-id="${node.id}">
+           data-node-id="${node.id}"
+           data-parent-id="${node.parent_id || 'null'}">
+        <i class="fas fa-grip-vertical text-gray-300 mr-2 cursor-move drag-handle"></i>
         ${hasChildren ? `
           <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} text-gray-400 mr-2 w-3 toggle-icon" 
              data-node-id="${node.id}"></i>
@@ -146,7 +271,7 @@ function renderTreeNode(node, level) {
           <span class="w-3 mr-2"></span>
         `}
         <i class="fas fa-file-alt text-blue-500 mr-2"></i>
-        <span class="flex-1 text-sm">${escapeHtml(node.title)}</span>
+        <span class="flex-1 text-sm">${title}</span>
         <button class="add-child-btn text-gray-400 hover:text-blue-500 text-xs px-2" 
                 data-node-id="${node.id}" 
                 title="子ノードを追加">
@@ -154,7 +279,7 @@ function renderTreeNode(node, level) {
         </button>
       </div>
       ${hasChildren ? `
-        <div class="tree-children ${isExpanded ? 'expanded' : ''}">
+        <div class="tree-children ${isExpanded ? 'expanded' : ''}" data-parent="${node.id}">
           ${node.children.map(child => renderTreeNode(child, level + 1)).join('')}
         </div>
       ` : ''}
@@ -170,7 +295,8 @@ function attachTreeEventListeners() {
     item.addEventListener('click', (e) => {
       if (e.target.classList.contains('toggle-icon') || 
           e.target.classList.contains('add-child-btn') ||
-          e.target.closest('.add-child-btn')) {
+          e.target.closest('.add-child-btn') ||
+          e.target.classList.contains('drag-handle')) {
         return
       }
       
@@ -194,6 +320,47 @@ function attachTreeEventListeners() {
       e.stopPropagation()
       const parentId = parseInt(btn.dataset.nodeId)
       await addChildNode(parentId)
+    })
+  })
+}
+
+function setupDragAndDrop() {
+  // ルートレベルのSortable
+  const treeContainer = document.getElementById('tree-container')
+  
+  new Sortable(treeContainer, {
+    animation: 150,
+    handle: '.drag-handle',
+    ghostClass: 'dragging',
+    group: 'nested',
+    fallbackOnBody: true,
+    swapThreshold: 0.65,
+    onEnd: async function(evt) {
+      const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+      const newIndex = evt.newIndex
+      
+      await moveNode(nodeId, null, newIndex)
+    }
+  })
+  
+  // 子要素のSortable
+  document.querySelectorAll('.tree-children.expanded').forEach(container => {
+    const parentId = parseInt(container.dataset.parent)
+    
+    new Sortable(container, {
+      animation: 150,
+      handle: '.drag-handle',
+      ghostClass: 'dragging',
+      group: 'nested',
+      fallbackOnBody: true,
+      swapThreshold: 0.65,
+      onEnd: async function(evt) {
+        const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+        const newIndex = evt.newIndex
+        const newParentId = evt.to.dataset.parent ? parseInt(evt.to.dataset.parent) : null
+        
+        await moveNode(nodeId, newParentId, newIndex)
+      }
     })
   })
 }
@@ -409,6 +576,10 @@ function formatDate(dateString) {
 document.addEventListener('DOMContentLoaded', () => {
   // ルートノード追加ボタン
   document.getElementById('add-root-btn').addEventListener('click', addRootNode)
+  
+  // 検索機能
+  document.getElementById('search-input').addEventListener('input', handleSearchInput)
+  document.getElementById('clear-search-btn').addEventListener('click', clearSearch)
   
   // 初期データ読み込み
   fetchNodes()

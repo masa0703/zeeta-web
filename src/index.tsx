@@ -161,6 +161,57 @@ app.delete('/api/nodes/:id', async (c) => {
   }
 })
 
+// ノードの親変更
+app.patch('/api/nodes/:id/parent', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    const { parent_id, position } = body
+    
+    // 循環参照チェック（自分自身または自分の子孫を親にできない）
+    if (parent_id) {
+      const checkCircular = async (nodeId: string, targetId: string): Promise<boolean> => {
+        if (nodeId === targetId) return true
+        const node = await c.env.DB.prepare('SELECT parent_id FROM nodes WHERE id = ?').bind(nodeId).first()
+        if (!node || !node.parent_id) return false
+        return checkCircular(String(node.parent_id), targetId)
+      }
+      
+      if (await checkCircular(parent_id, id)) {
+        return c.json({ success: false, error: 'Circular reference detected' }, 400)
+      }
+    }
+    
+    await c.env.DB.prepare(
+      'UPDATE nodes SET parent_id = ?, position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(parent_id || null, position || 0, id).run()
+    
+    const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ?').bind(id).first()
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 検索
+app.get('/api/search', async (c) => {
+  try {
+    const query = c.req.query('q')
+    if (!query || query.trim() === '') {
+      return c.json({ success: true, data: [] })
+    }
+    
+    const searchTerm = `%${query}%`
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM nodes WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC'
+    ).bind(searchTerm, searchTerm).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ===============================
 // Frontend
 // ===============================
@@ -177,7 +228,7 @@ app.get('/', (c) => {
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
           .tree-item {
-            cursor: pointer;
+            cursor: move;
             user-select: none;
           }
           .tree-item:hover {
@@ -186,6 +237,12 @@ app.get('/', (c) => {
           .tree-item.active {
             background-color: #dbeafe;
             border-left: 3px solid #3b82f6;
+          }
+          .tree-item.dragging {
+            opacity: 0.5;
+          }
+          .tree-item.drag-over {
+            border-top: 2px solid #3b82f6;
           }
           .tree-children {
             max-height: 0;
@@ -197,6 +254,10 @@ app.get('/', (c) => {
           }
           #editor-panel {
             min-height: 400px;
+          }
+          .search-highlight {
+            background-color: #fef08a;
+            font-weight: 600;
           }
         </style>
     </head>
@@ -213,6 +274,20 @@ app.get('/', (c) => {
                         <i class="fas fa-plus mr-1"></i>ルート追加
                     </button>
                 </div>
+                
+                <!-- 検索ボックス -->
+                <div class="mb-4">
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="検索..." 
+                               class="w-full px-3 py-2 pl-10 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <button id="clear-search-btn" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 hidden">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="search-results" class="mt-2 text-xs text-gray-500 hidden"></div>
+                </div>
+                
                 <div id="tree-container"></div>
             </div>
 
@@ -228,6 +303,7 @@ app.get('/', (c) => {
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>
