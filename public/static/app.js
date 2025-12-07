@@ -4,10 +4,13 @@
 let nodes = []
 let relations = []
 let selectedNodeId = null
+let selectedNodePath = null // 現在選択されているノードのパス (例: "1-2-5")
+let selectedNodeElement = null // 現在選択されているDOM要素
 let expandedNodes = new Set()
 let searchQuery = ''
 let searchResults = []
 let clipboard = null // コピーしたノードのID
+let treeViewMode = 'normal' // 'normal' or 'reverse'
 
 // ===============================
 // API呼び出し
@@ -280,31 +283,78 @@ function buildTree() {
   return rootNodes
 }
 
+// 逆ツリー構築（選択ノード→親の方向）
+function buildReverseTree() {
+  // 選択されたノードがない場合は空配列を返す
+  if (!selectedNodeId) {
+    return []
+  }
+  
+  const nodeMap = new Map()
+  
+  // ノードをマップに格納
+  nodes.forEach(node => {
+    nodeMap.set(node.id, { ...node, children: [], parents: [] })
+  })
+  
+  // リレーションベースで親子関係を構築（逆向き）
+  relations.forEach(rel => {
+    const parent = nodeMap.get(rel.parent_node_id)
+    const child = nodeMap.get(rel.child_node_id)
+    
+    if (parent && child) {
+      // 逆ツリーでは、子ノードの children に親ノードを追加
+      child.children.push(parent)
+      parent.parents.push(child)
+    }
+  })
+  
+  // 選択されたノードのみをルートとする
+  const selectedNode = nodeMap.get(selectedNodeId)
+  return selectedNode ? [selectedNode] : []
+}
+
 function renderTree() {
   const treeContainer = document.getElementById('tree-container')
-  const tree = buildTree()
+  const tree = treeViewMode === 'reverse' ? buildReverseTree() : buildTree()
   
   if (tree.length === 0) {
-    treeContainer.innerHTML = `
-      <div class="text-center text-gray-400 py-8">
-        <i class="fas fa-folder-open text-3xl mb-2"></i>
-        <p>ノードがありません</p>
-        <p class="text-sm">右上の「ルート追加」ボタンから作成できます</p>
-      </div>
-    `
+    if (treeViewMode === 'reverse') {
+      treeContainer.innerHTML = `
+        <div class="text-center text-gray-400 py-8">
+          <i class="fas fa-arrow-left text-3xl mb-2"></i>
+          <p>逆ツリー表示</p>
+          <p class="text-sm">左側のノードを選択してください</p>
+          <p class="text-xs mt-2">選択したノードから親方向にツリーが表示されます</p>
+        </div>
+      `
+    } else {
+      treeContainer.innerHTML = `
+        <div class="text-center text-gray-400 py-8">
+          <i class="fas fa-folder-open text-3xl mb-2"></i>
+          <p>ノードがありません</p>
+          <p class="text-sm">右上の「ルート追加」ボタンから作成できます</p>
+        </div>
+      `
+    }
     return
   }
   
-  treeContainer.innerHTML = tree.map(node => renderTreeNode(node, 0)).join('')
+  treeContainer.innerHTML = tree.map(node => renderTreeNode(node, 0, new Set(), String(node.id))).join('')
   
   // イベントリスナーを再設定
   attachTreeEventListeners()
+
+  // 選択状態の復元
+  restoreSelection()
   
-  // ドラッグ&ドロップの設定
-  setupDragAndDrop()
+  // ドラッグ&ドロップの設定（通常モードのみ）
+  if (treeViewMode === 'normal') {
+    setupDragAndDrop()
+  }
 }
 
-function renderTreeNode(node, level, visitedNodes = new Set()) {
+function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
   // 循環参照防止
   if (visitedNodes.has(node.id)) {
     return `<div class="text-xs text-gray-400 ml-${level * 5}">[循環参照]</div>`
@@ -312,21 +362,34 @@ function renderTreeNode(node, level, visitedNodes = new Set()) {
   
   visitedNodes.add(node.id)
   
+  // パスが渡されていない場合はIDを使用（ルートの場合など）
+  if (!currentPath) currentPath = String(node.id)
+  
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
-  const isSelected = selectedNodeId === node.id
+  // パスが一致する場合のみ選択状態とする
+  const isSelected = selectedNodePath === currentPath
   const isSearchResult = searchResults.some(r => r.id === node.id)
-  const hasMultipleParents = node.parents && node.parents.length > 1
+  // 通常モードのみ複数親バッジを表示
+  const hasMultipleParents = treeViewMode === 'normal' && node.parents && node.parents.length > 1
   const indent = level * 20
   
   const title = searchQuery ? highlightText(node.title, searchQuery) : escapeHtml(node.title)
+  
+  // モードによるUI制御
+  const showDragHandle = treeViewMode === 'normal'
+  const showAddChildBtn = treeViewMode === 'normal'
   
   let html = `
     <div data-node-group="${node.id}">
       <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
-           data-node-id="${node.id}">
-        <i class="fas fa-grip-vertical text-gray-300 mr-2 cursor-move drag-handle"></i>
+           data-node-id="${node.id}"
+           data-node-path="${currentPath}">
+        ${showDragHandle ? 
+          '<i class="fas fa-grip-vertical text-gray-300 mr-2 cursor-move drag-handle"></i>' : 
+          '<i class="fas fa-circle text-gray-200 mr-2 text-xs" style="opacity: 0.3;"></i>'
+        }
         ${hasChildren ? `
           <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} text-gray-400 mr-2 w-3 toggle-icon" 
              data-node-id="${node.id}"></i>
@@ -340,15 +403,17 @@ function renderTreeNode(node, level, visitedNodes = new Set()) {
             <i class="fas fa-link"></i> ${node.parents.length}
           </span>
         ` : ''}
+        ${showAddChildBtn ? `
         <button class="add-child-btn text-gray-400 hover:text-blue-500 text-xs px-2" 
                 data-node-id="${node.id}" 
                 title="子ノードを追加">
           <i class="fas fa-plus"></i>
         </button>
+        ` : ''}
       </div>
       ${hasChildren ? `
         <div class="tree-children ${isExpanded ? 'expanded' : ''}" data-parent="${node.id}">
-          ${node.children.map(child => renderTreeNode(child, level + 1, new Set(visitedNodes))).join('')}
+          ${node.children.map(child => renderTreeNode(child, level + 1, new Set(visitedNodes), `${currentPath}-${child.id}`)).join('')}
         </div>
       ` : ''}
     </div>
@@ -369,7 +434,9 @@ function attachTreeEventListeners() {
       }
       
       const nodeId = parseInt(item.dataset.nodeId)
-      selectNode(nodeId)
+      const nodePath = item.dataset.nodePath
+      selectedNodeElement = item
+      selectNode(nodeId, nodePath)
     })
   })
   
@@ -541,9 +608,87 @@ function toggleNode(nodeId) {
   renderTree()
 }
 
-async function selectNode(nodeId) {
+// ===============================
+// ユーティリティ（DOM操作関連）
+// ===============================
+function getNodePath(element) {
+  const path = []
+  if (!element) return path
+
+  // 自分自身のID
+  if (element.dataset && element.dataset.nodeId) {
+    path.unshift(parseInt(element.dataset.nodeId))
+  }
+
+  // 親を遡ってパスを構築
+  let current = element.parentElement
+  while (current && current.id !== 'tree-container') {
+    // tree-childrenのdata-parent属性を使用
+    if (current.classList.contains('tree-children') && current.dataset.parent) {
+      path.unshift(parseInt(current.dataset.parent))
+    }
+    current = current.parentElement
+  }
+  return path
+}
+
+// 選択状態を復元する関数
+function restoreSelection() {
+  if (!selectedNodePath) return
+
+  const item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
+  if (item) {
+    selectedNodeElement = item
+    item.classList.add('active')
+  } else {
+    // パスで見つからない場合（親が閉じられた場合など）、IDで検索してパスを更新
+    // ただし、IDだけだと複数ある場合に意図しない場所に飛ぶ可能性があるため
+    // 慎重に扱うべきだが、ここではユーザビリティのため最初に見つかったものを選択
+    const fallbackItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"]`)
+    if (fallbackItem) {
+      selectedNodeElement = fallbackItem
+      selectedNodePath = fallbackItem.dataset.nodePath
+      fallbackItem.classList.add('active')
+    }
+  }
+}
+
+async function selectNode(nodeId, nodePath = null) {
   selectedNodeId = nodeId
-  renderTree()
+  
+  // パスが指定された場合はそれを採用、なければ検索して設定
+  if (nodePath) {
+    selectedNodePath = nodePath
+  } else {
+    // パス未指定（検索など）の場合、DOMから探す
+    const item = document.querySelector(`.tree-item[data-node-id="${nodeId}"]`)
+    if (item) {
+      selectedNodePath = item.dataset.nodePath
+      selectedNodeElement = item
+    }
+  }
+  
+  // 再描画せずDOM上の選択状態のみ更新
+  // (通常モード: カーソル飛び防止, 逆ツリーモード: ルート維持のため)
+  document.querySelectorAll('.tree-item.active').forEach(item => {
+    item.classList.remove('active')
+  })
+  
+  if (selectedNodePath) {
+    const targetElement = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
+    if (targetElement) {
+      targetElement.classList.add('active')
+      selectedNodeElement = targetElement
+    }
+  } else {
+    // フォールバック
+    const targetElement = document.querySelector(`.tree-item[data-node-id="${nodeId}"]`)
+    if (targetElement) {
+      targetElement.classList.add('active')
+      selectedNodeElement = targetElement
+      selectedNodePath = targetElement.dataset.nodePath
+    }
+  }
   
   const node = await fetchNodeById(nodeId)
   if (node) {
@@ -935,6 +1080,138 @@ async function handlePaste(e) {
 }
 
 // ===============================
+// キーボードナビゲーション（矢印キー）
+// ===============================
+function getVisibleNodeElements() {
+  const visibleElements = []
+  
+  // ツリーコンテナから再帰的に走査して、表示順序通りにノード要素を取得
+  function traverseTree(element) {
+    // data-node-groupを持つ要素を探す
+    const nodeGroups = element.children
+    
+    for (let i = 0; i < nodeGroups.length; i++) {
+      const group = nodeGroups[i]
+      
+      // .tree-itemを探す
+      const treeItem = group.querySelector(':scope > .tree-item')
+      if (treeItem) {
+        visibleElements.push(treeItem)
+        
+        // 子要素(.tree-children)があり、かつexpandedの場合は再帰的に走査
+        const childrenContainer = group.querySelector(':scope > .tree-children.expanded')
+        if (childrenContainer) {
+          traverseTree(childrenContainer)
+        }
+      }
+    }
+  }
+  
+  const treeContainer = document.getElementById('tree-container')
+  if (treeContainer) {
+    traverseTree(treeContainer)
+  }
+  
+  return visibleElements
+}
+
+function handleArrowKeys(e) {
+  // 入力フィールドにフォーカスがある場合はスキップ
+  if (document.activeElement.tagName === 'INPUT' || 
+      document.activeElement.tagName === 'TEXTAREA') {
+    return
+  }
+  
+  // 矢印キーでない場合はスキップ
+  if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    return
+  }
+  
+  e.preventDefault()
+  
+  const visibleElements = getVisibleNodeElements()
+  if (visibleElements.length === 0) return
+  
+  // 選択されているノードがない場合は最初のノードを選択
+  if (!selectedNodePath) {
+    const firstElement = visibleElements[0]
+    const firstNodeId = parseInt(firstElement.dataset.nodeId)
+    const firstNodePath = firstElement.dataset.nodePath
+    selectNode(firstNodeId, firstNodePath)
+    return
+  }
+  
+  // 現在選択されている要素のインデックスを見つける
+  // DOM再構築後でもパスを使って正確に特定
+  let currentIndex = visibleElements.findIndex(el => el.dataset.nodePath === selectedNodePath)
+  
+  if (currentIndex === -1) {
+    // 見つからない場合（例えば親が閉じられた）、最初の要素を選択
+    const firstElement = visibleElements[0]
+    const firstNodeId = parseInt(firstElement.dataset.nodeId)
+    const firstNodePath = firstElement.dataset.nodePath
+    selectNode(firstNodeId, firstNodePath)
+    return
+  }
+  
+  const selectedNode = nodes.find(n => n.id === selectedNodeId)
+  
+  switch (e.key) {
+    case 'ArrowUp':
+      // 上のノードを選択
+      if (currentIndex > 0) {
+        const prevElement = visibleElements[currentIndex - 1]
+        const prevNodeId = parseInt(prevElement.dataset.nodeId)
+        const prevNodePath = prevElement.dataset.nodePath
+        selectNode(prevNodeId, prevNodePath)
+      }
+      break
+      
+    case 'ArrowDown':
+      // 下のノードを選択
+      if (currentIndex < visibleElements.length - 1) {
+        const nextElement = visibleElements[currentIndex + 1]
+        const nextNodeId = parseInt(nextElement.dataset.nodeId)
+        const nextNodePath = nextElement.dataset.nodePath
+        selectNode(nextNodeId, nextNodePath)
+      }
+      break
+      
+    case 'ArrowRight':
+      // 子ノードがある場合は展開
+      const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
+      if (hasChildren) {
+        if (!expandedNodes.has(selectedNodeId)) {
+          expandedNodes.add(selectedNodeId)
+          renderTree()
+        }
+      }
+      break
+      
+    case 'ArrowLeft':
+      // 展開されている場合は折りたたむ
+      if (expandedNodes.has(selectedNodeId)) {
+        expandedNodes.delete(selectedNodeId)
+        renderTree()
+      } else {
+        // 既に折りたたまれている場合は、親ノードに移動
+        // パスから親パスを計算: "1-2-3" -> "1-2"
+        const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
+        if (lastSeparatorIndex > 0) {
+          const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
+          const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
+          
+          if (parentElement) {
+            const parentId = parseInt(parentElement.dataset.nodeId)
+            selectNode(parentId, parentPath)
+          }
+        }
+      }
+      break
+  }
+}
+
+// ===============================
 // 初期化
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -948,9 +1225,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // ペインリサイズ
   setupPaneResize()
   
+  // ツリー表示モード切り替え
+  document.querySelectorAll('.tree-view-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const viewMode = tab.dataset.view
+      
+      // タブのアクティブ状態を切り替え
+      document.querySelectorAll('.tree-view-tab').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+      
+      // 表示モードを切り替え
+      treeViewMode = viewMode
+      renderTree()
+    })
+  })
+  
   // キーボードショートカット
   document.addEventListener('keydown', handleCopy)
   document.addEventListener('keydown', handlePaste)
+  document.addEventListener('keydown', handleArrowKeys)
   
   // 初期データ読み込み
   fetchNodes()
