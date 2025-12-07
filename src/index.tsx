@@ -425,43 +425,49 @@ app.get('/', (c) => {
     <body class="bg-gray-50">
         <div class="flex h-screen" id="main-container">
             <!-- 左ペイン: ツリー表示 -->
-            <div class="bg-white border-r border-gray-200 p-4 overflow-y-auto" id="tree-pane" style="width: 33.333%">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-sitemap mr-2"></i>
-                        Zeeta Web
-                    </h2>
-                    <button id="add-root-btn" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
-                        <i class="fas fa-plus mr-1"></i>ルート追加
-                    </button>
-                </div>
-                
-                <!-- 検索ボックス -->
-                <div class="mb-4">
-                    <div class="relative">
-                        <input type="text" id="search-input" placeholder="検索..." 
-                               class="w-full px-3 py-2 pl-10 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        <button id="clear-search-btn" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 hidden">
-                            <i class="fas fa-times"></i>
+            <div class="bg-white border-r border-gray-200 flex flex-col" id="tree-pane" style="width: 33.333%">
+                <!-- 固定ヘッダー部分 -->
+                <div class="p-4 flex-shrink-0">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-sitemap mr-2"></i>
+                            Zeeta Web
+                        </h2>
+                        <button id="add-root-btn" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                            <i class="fas fa-plus mr-1"></i>ルート追加
                         </button>
                     </div>
-                    <div id="search-results" class="mt-2 text-xs text-gray-500 hidden"></div>
-                </div>
-                
-                <!-- ツリー表示タブ -->
-                <div class="mb-3 border-b border-gray-200">
-                    <div class="flex gap-1">
-                        <button class="tree-view-tab active px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="normal">
-                            <i class="fas fa-stream mr-1"></i>通常
-                        </button>
-                        <button class="tree-view-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="reverse">
-                            <i class="fas fa-level-up-alt mr-1"></i>逆ツリー
-                        </button>
+                    
+                    <!-- 検索ボックス -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="検索..." 
+                                   class="w-full px-3 py-2 pl-10 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <button id="clear-search-btn" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 hidden">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="search-results" class="mt-2 text-xs text-gray-500 hidden"></div>
+                    </div>
+                    
+                    <!-- ツリー表示タブ -->
+                    <div class="mb-3 border-b border-gray-200">
+                        <div class="flex gap-1">
+                            <button class="tree-view-tab active px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="normal">
+                                <i class="fas fa-stream mr-1"></i>通常
+                            </button>
+                            <button class="tree-view-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent" data-view="reverse">
+                                <i class="fas fa-level-up-alt mr-1"></i>逆ツリー
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <div id="tree-container"></div>
+                <!-- スクロール可能なツリーコンテナ -->
+                <div class="flex-1 overflow-y-auto px-4 pb-4">
+                    <div id="tree-container"></div>
+                </div>
             </div>
             
             <!-- リサイズハンドル -->
