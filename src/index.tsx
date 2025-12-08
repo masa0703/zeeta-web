@@ -359,6 +359,9 @@ app.get('/', (c) => {
         <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon.png">
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <!-- EasyMDE -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
         <style>
           .tree-item {
             cursor: move;

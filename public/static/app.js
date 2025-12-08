@@ -933,26 +933,10 @@ function renderEditor(node = null, parents = []) {
         
         <!-- 内容 (Markdown対応) -->
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="block text-sm font-medium text-gray-700">
-              <i class="fas fa-align-left mr-1"></i>内容 (Markdown対応)
-            </label>
-            <div class="flex gap-2 text-xs">
-              <button class="tab-btn active" data-tab="edit">
-                <i class="fas fa-edit mr-1"></i>編集
-              </button>
-              <button class="tab-btn" data-tab="preview">
-                <i class="fas fa-eye mr-1"></i>プレビュー
-              </button>
-            </div>
-          </div>
-          <div id="content-edit-tab">
-            <textarea id="node-content" rows="12"
-                      class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm">${escapeHtml(node.content || '')}</textarea>
-          </div>
-          <div id="content-preview-tab" class="hidden">
-            <div id="markdown-preview" class="markdown-preview w-full min-h-[300px] px-3 py-2 border border-gray-300 rounded bg-gray-50"></div>
-          </div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            <i class="fas fa-align-left mr-1"></i>内容 (Markdown対応)
+          </label>
+          <textarea id="node-content">${escapeHtml(node.content || '')}</textarea>
         </div>
         
         <!-- 作成者 -->
@@ -1006,41 +990,27 @@ function renderEditor(node = null, parents = []) {
     })
   })
 
-  // タブ切り替え（編集/プレビュー）
-  const tabBtns = document.querySelectorAll('.tab-btn')
-  const editTab = document.getElementById('content-edit-tab')
-  const previewTab = document.getElementById('content-preview-tab')
-  const markdownPreview = document.getElementById('markdown-preview')
-  const contentTextarea = document.getElementById('node-content')
-
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab
-
-      // タブボタンのアクティブ状態を切り替え
-      tabBtns.forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-
-      if (tab === 'edit') {
-        editTab.classList.remove('hidden')
-        previewTab.classList.add('hidden')
-      } else if (tab === 'preview') {
-        editTab.classList.add('hidden')
-        previewTab.classList.remove('hidden')
-
-        // Markdownをレンダリング
-        const content = contentTextarea.value || ''
-        markdownPreview.innerHTML = marked.parse(content)
-      }
-    })
-  })
-
-  // リアルタイムプレビュー（プレビュータブが開いているときのみ）
-  contentTextarea.addEventListener('input', () => {
-    if (!previewTab.classList.contains('hidden')) {
-      const content = contentTextarea.value || ''
-      markdownPreview.innerHTML = marked.parse(content)
-    }
+  // EasyMDEを初期化
+  if (window.currentEditor) {
+    window.currentEditor.toTextArea() // 既存のエディタを破棄
+    window.currentEditor = null
+  }
+  
+  window.currentEditor = new EasyMDE({
+    element: document.getElementById('node-content'),
+    spellChecker: false,
+    autosave: {
+      enabled: false
+    },
+    toolbar: [
+      "bold", "italic", "heading", "|",
+      "quote", "unordered-list", "ordered-list", "|",
+      "link", "image", "|",
+      "preview", "side-by-side", "fullscreen", "|",
+      "guide"
+    ],
+    status: ["lines", "words", "cursor"],
+    placeholder: "Markdownで内容を入力...",
   })
 }
 
@@ -1048,7 +1018,8 @@ async function saveCurrentNode() {
   if (!selectedNodeId) return
 
   const title = document.getElementById('node-title').value.trim()
-  const content = document.getElementById('node-content').value.trim()
+  // EasyMDEから値を取得
+  const content = window.currentEditor ? window.currentEditor.value().trim() : ''
   const author = document.getElementById('node-author').value.trim()
 
   if (!title) {
