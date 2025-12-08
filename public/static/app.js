@@ -438,19 +438,19 @@ function attachTreeEventListeners() {
 
       const nodeId = parseInt(item.dataset.nodeId)
       const nodePath = item.dataset.nodePath
-      
+
       // 逆ツリーモードでは、ルートノード（selectedNodeId）を変更しない
       // 選択したノードは詳細表示のためだけに選択状態にする
       if (treeViewMode === 'reverse') {
         // ルートノードを変更せず、選択状態のみ更新
         selectedNodeElement = item
         selectedNodePath = nodePath
-        
+
         // 選択状態を更新
         document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'))
         document.querySelectorAll('.tree-item.duplicate-active').forEach(el => el.classList.remove('duplicate-active'))
         item.classList.add('active')
-        
+
         // エディタにノード情報を表示
         fetchNodeById(nodeId).then(node => {
           if (node) {
@@ -633,14 +633,14 @@ function toggleNode(nodeId) {
   } else {
     expandedNodes.add(nodeId)
   }
-  
+
   // 逆ツリーモードでは、ルートノードを維持するため、
   // renderTree()の前に選択状態を保存しておく
   const savedSelectedNodePath = selectedNodePath
   const savedSelectedNodeId = selectedNodeId
-  
+
   renderTree()
-  
+
   // 逆ツリーモードでは、選択状態を復元（ルートノードは変更しない）
   if (treeViewMode === 'reverse') {
     // selectedNodeId（ルート）は変更しない
@@ -651,7 +651,7 @@ function toggleNode(nodeId) {
         selectedNodeElement = targetElement
         selectedNodePath = savedSelectedNodePath
         targetElement.classList.add('active')
-        
+
         // エディタに表示
         fetchNodeById(savedSelectedNodeId).then(node => {
           if (node) {
@@ -704,7 +704,7 @@ function restoreSelection() {
         selectedNodeElement = rootItem
         selectedNodePath = String(selectedNodeId)
         rootItem.classList.add('active')
-        
+
         // エディタに表示
         fetchNodeById(selectedNodeId).then(node => {
           if (node) {
@@ -717,14 +717,14 @@ function restoreSelection() {
         return
       }
     }
-    
+
     // selectedNodePathが指定されている場合、そのノードを選択
     if (selectedNodePath) {
       const item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
       if (item) {
         selectedNodeElement = item
         item.classList.add('active')
-        
+
         // エディタに表示
         const nodeIdFromPath = parseInt(selectedNodePath.split('-')[selectedNodePath.split('-').length - 1])
         fetchNodeById(nodeIdFromPath).then(node => {
@@ -738,7 +738,7 @@ function restoreSelection() {
         return
       }
     }
-    
+
     // 見つからない場合は、ルートノードを選択
     if (selectedNodeId) {
       const rootItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"]`)
@@ -746,7 +746,7 @@ function restoreSelection() {
         selectedNodeElement = rootItem
         selectedNodePath = rootItem.dataset.nodePath
         rootItem.classList.add('active')
-        
+
         // エディタに表示
         fetchNodeById(selectedNodeId).then(node => {
           if (node) {
@@ -1405,7 +1405,7 @@ function handleArrowKeys(e) {
         }
       }
       break
-      
+
     case 'ArrowLeft':
       if (treeViewMode === 'reverse') {
         // 逆ツリーモード: 展開されている場合は折りたたむ
@@ -1444,7 +1444,7 @@ function handleArrowKeys(e) {
             if (lastSeparatorIndex > 0) {
               const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
               const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
-              
+
               if (parentElement) {
                 const parentId = parseInt(parentElement.dataset.nodeId)
                 selectNode(parentId, parentPath)
