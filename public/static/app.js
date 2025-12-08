@@ -637,21 +637,52 @@ function getNodePath(element) {
 
 // 選択状態を復元する関数
 function restoreSelection() {
-  if (!selectedNodePath) return
+  if (!selectedNodePath && !selectedNodeId) return
 
-  const item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
+  let item = null
+  
+  // まずパスで検索
+  if (selectedNodePath) {
+    item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
+  }
+  
+  // パスで見つからない場合、IDで検索
+  if (!item && selectedNodeId) {
+    // 同じIDのノードが複数ある場合、selectedNodePathに最も近いものを選ぶ
+    // または最初に見つかったものを選ぶ
+    const allItems = document.querySelectorAll(`.tree-item[data-node-id="${selectedNodeId}"]`)
+    if (allItems.length > 0) {
+      // パスが指定されていて、そのパスに近いものを優先
+      if (selectedNodePath) {
+        // パスのプレフィックスが一致するものを探す
+        for (let i = 0; i < allItems.length; i++) {
+          const itemPath = allItems[i].dataset.nodePath
+          if (itemPath && itemPath.startsWith(selectedNodePath.split('-')[0])) {
+            item = allItems[i]
+            selectedNodePath = itemPath
+            break
+          }
+        }
+      }
+      // 見つからなければ最初のものを選ぶ
+      if (!item) {
+        item = allItems[0]
+        selectedNodePath = item.dataset.nodePath
+      }
+    }
+  }
+  
   if (item) {
     selectedNodeElement = item
     item.classList.add('active')
-  } else {
-    // パスで見つからない場合（親が閉じられた場合など）、IDで検索してパスを更新
-    // ただし、IDだけだと複数ある場合に意図しない場所に飛ぶ可能性があるため
-    // 慎重に扱うべきだが、ここではユーザビリティのため最初に見つかったものを選択
-    const fallbackItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"]`)
-    if (fallbackItem) {
-      selectedNodeElement = fallbackItem
-      selectedNodePath = fallbackItem.dataset.nodePath
-      fallbackItem.classList.add('active')
+    
+    // 同一ノードのハイライト（選択中のノード以外で同じIDを持つもの）
+    if (selectedNodeId) {
+      document.querySelectorAll(`.tree-item[data-node-id="${selectedNodeId}"]`).forEach(el => {
+        if (el !== item && el.dataset.nodePath !== selectedNodePath) {
+          el.classList.add('duplicate-active')
+        }
+      })
     }
   }
 }
@@ -1144,7 +1175,7 @@ function handleArrowKeys(e) {
   if (visibleElements.length === 0) return
   
   // 選択されているノードがない場合は最初のノードを選択
-  if (!selectedNodePath) {
+  if (!selectedNodePath && !selectedNodeId) {
     const firstElement = visibleElements[0]
     const firstNodeId = parseInt(firstElement.dataset.nodeId)
     const firstNodePath = firstElement.dataset.nodePath
@@ -1153,8 +1184,31 @@ function handleArrowKeys(e) {
   }
   
   // 現在選択されている要素のインデックスを見つける
-  // DOM再構築後でもパスを使って正確に特定
-  let currentIndex = visibleElements.findIndex(el => el.dataset.nodePath === selectedNodePath)
+  // 1. まずselectedNodeElement（実際のDOM要素）で探す（最も確実）
+  // 2. 見つからなければselectedNodePathで探す
+  // 3. それでも見つからなければselectedNodeIdで最初に見つかったものを探す
+  let currentIndex = -1
+  
+  if (selectedNodeElement && document.contains(selectedNodeElement)) {
+    // selectedNodeElementが有効な場合、visibleElements内で同じ要素参照を探す
+    currentIndex = visibleElements.findIndex(el => el === selectedNodeElement)
+  }
+  
+  if (currentIndex === -1 && selectedNodePath) {
+    // パスで探す
+    currentIndex = visibleElements.findIndex(el => el.dataset.nodePath === selectedNodePath)
+  }
+  
+  if (currentIndex === -1 && selectedNodeId) {
+    // IDで最初に見つかったものを探す（フォールバック）
+    currentIndex = visibleElements.findIndex(el => parseInt(el.dataset.nodeId) === selectedNodeId)
+    // 見つかった場合は、そのパスをselectedNodePathとして更新
+    if (currentIndex !== -1) {
+      const foundElement = visibleElements[currentIndex]
+      selectedNodePath = foundElement.dataset.nodePath
+      selectedNodeElement = foundElement
+    }
+  }
   
   if (currentIndex === -1) {
     // 見つからない場合（例えば親が閉じられた）、最初の要素を選択
@@ -1195,6 +1249,7 @@ function handleArrowKeys(e) {
         if (!expandedNodes.has(selectedNodeId)) {
           expandedNodes.add(selectedNodeId)
           renderTree()
+          // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
         }
       }
       break
@@ -1204,17 +1259,20 @@ function handleArrowKeys(e) {
       if (expandedNodes.has(selectedNodeId)) {
         expandedNodes.delete(selectedNodeId)
         renderTree()
+        // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
       } else {
         // 既に折りたたまれている場合は、親ノードに移動
         // パスから親パスを計算: "1-2-3" -> "1-2"
-        const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
-        if (lastSeparatorIndex > 0) {
-          const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
-          const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
-          
-          if (parentElement) {
-            const parentId = parseInt(parentElement.dataset.nodeId)
-            selectNode(parentId, parentPath)
+        if (selectedNodePath) {
+          const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
+          if (lastSeparatorIndex > 0) {
+            const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
+            const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
+            
+            if (parentElement) {
+              const parentId = parseInt(parentElement.dataset.nodeId)
+              selectNode(parentId, parentPath)
+            }
           }
         }
       }
