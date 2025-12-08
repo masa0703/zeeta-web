@@ -578,12 +578,35 @@ function isDescendant(ancestorId, nodeId) {
 }
 
 function toggleNode(nodeId) {
+  // DOM要素を探す
+  const toggleIcon = document.querySelector(`.toggle-icon[data-node-id="${nodeId}"]`)
+  if (!toggleIcon) return
+  
+  const treeItem = toggleIcon.closest('.tree-item')
+  if (!treeItem) return
+  
+  const nodeGroup = treeItem.closest('[data-node-group]')
+  if (!nodeGroup) return
+  
+  const childrenContainer = nodeGroup.querySelector('.tree-children')
+  if (!childrenContainer) return
+  
+  // 展開/折りたたみの切り替え
   if (expandedNodes.has(nodeId)) {
+    // 折りたたみ
     expandedNodes.delete(nodeId)
+    childrenContainer.classList.remove('expanded')
+    toggleIcon.classList.remove('fa-chevron-down')
+    toggleIcon.classList.add('fa-chevron-right')
   } else {
+    // 展開
     expandedNodes.add(nodeId)
+    childrenContainer.classList.add('expanded')
+    toggleIcon.classList.remove('fa-chevron-right')
+    toggleIcon.classList.add('fa-chevron-down')
   }
-  renderTree()
+  
+  // DOM操作のみ、renderTree()は呼ばない
 }
 
 function updateSelectedNodeElement() {
@@ -1142,21 +1165,75 @@ function handleArrowKeys(e) {
       break
       
     case 'ArrowRight':
-      // 子ノードがある場合は展開
-      const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
-      if (hasChildren) {
-        if (!expandedNodes.has(selectedNodeId)) {
-          expandedNodes.add(selectedNodeId)
-          renderTree()
+      if (selectedNodeElement) {
+        // 選択中のノードのIDを取得
+        const nodeIdToExpand = parseInt(selectedNodeElement.dataset.nodeId)
+        
+        // 逆ツリーモードと通常モードで子ノードの判定方法が異なる
+        const hasChildren = treeViewMode === 'reverse'
+          ? relations.some(rel => rel.child_node_id === nodeIdToExpand)
+          : relations.some(rel => rel.parent_node_id === nodeIdToExpand)
+        
+        if (hasChildren && !expandedNodes.has(nodeIdToExpand)) {
+          // 展開状態を更新
+          expandedNodes.add(nodeIdToExpand)
+          
+          // DOM操作のみで展開（renderTreeを呼ばない）
+          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
+          if (nodeGroup) {
+            const childrenContainer = nodeGroup.querySelector('.tree-children')
+            if (childrenContainer) {
+              childrenContainer.classList.add('expanded')
+              // 展開アイコンも更新
+              const toggleIcon = selectedNodeElement.querySelector('.toggle-icon')
+              if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-right')
+                toggleIcon.classList.add('fa-chevron-down')
+              }
+            }
+          }
         }
       }
       break
       
     case 'ArrowLeft':
-      // 展開されている場合は折りたたむ
-      if (expandedNodes.has(selectedNodeId)) {
-        expandedNodes.delete(selectedNodeId)
-        renderTree()
+      if (selectedNodeElement) {
+        const nodeIdToCollapse = parseInt(selectedNodeElement.dataset.nodeId)
+        
+        if (expandedNodes.has(nodeIdToCollapse)) {
+          // 展開されている場合は折りたたむ（DOM操作のみ）
+          expandedNodes.delete(nodeIdToCollapse)
+          
+          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
+          if (nodeGroup) {
+            const childrenContainer = nodeGroup.querySelector('.tree-children')
+            if (childrenContainer) {
+              childrenContainer.classList.remove('expanded')
+              // 折りたたみアイコンも更新
+              const toggleIcon = selectedNodeElement.querySelector('.toggle-icon')
+              if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-down')
+                toggleIcon.classList.add('fa-chevron-right')
+              }
+            }
+          }
+        } else if (treeViewMode === 'normal') {
+          // 通常モードで既に折りたたまれている場合は、親ノードに移動
+          // パスから親パスを計算: "1-2-3" -> "1-2"
+          if (selectedNodePath) {
+            const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
+            if (lastSeparatorIndex > 0) {
+              const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
+              const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
+
+              if (parentElement) {
+                const parentId = parseInt(parentElement.dataset.nodeId)
+                selectNode(parentId, parentPath)
+              }
+            }
+          }
+        }
+        // 逆ツリーモードで折りたたまれている場合は何もしない
       }
       break
   }
