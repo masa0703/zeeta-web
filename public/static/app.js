@@ -1011,6 +1011,10 @@ function renderEditor(node = null, parents = []) {
     ],
     status: ["lines", "words", "cursor"],
     placeholder: "Markdownで内容を入力...",
+    previewRender: function(plainText) {
+      // marked.jsを使ってMarkdownをレンダリング
+      return window.marked ? marked.parse(plainText) : plainText
+    }
   })
 }
 
