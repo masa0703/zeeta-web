@@ -473,7 +473,8 @@ function attachTreeEventListeners() {
     icon.addEventListener('click', (e) => {
       e.stopPropagation()
       const nodeId = parseInt(icon.dataset.nodeId)
-      toggleNode(nodeId)
+      // クリックされたアイコン要素を渡す
+      toggleNode(nodeId, icon)
     })
   })
 
@@ -627,9 +628,15 @@ function isDescendant(ancestorId, nodeId) {
   return isDescendant(ancestorId, node.parent_id)
 }
 
-function toggleNode(nodeId) {
-  // DOM要素を探す
-  const toggleIcon = document.querySelector(`.toggle-icon[data-node-id="${nodeId}"]`)
+function toggleNode(nodeId, clickedElement = null) {
+  // クリックされた要素が渡された場合はそれを使用、なければquerySelectorで探す
+  let toggleIcon = clickedElement
+  
+  if (!toggleIcon) {
+    // フォールバック: IDで最初に見つかった要素を使用
+    toggleIcon = document.querySelector(`.toggle-icon[data-node-id="${nodeId}"]`)
+  }
+  
   if (!toggleIcon) return
   
   const treeItem = toggleIcon.closest('.tree-item')
