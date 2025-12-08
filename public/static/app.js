@@ -1261,7 +1261,13 @@ function handleArrowKeys(e) {
         renderTree()
         // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
       } else {
-        // 既に折りたたまれている場合は、親ノードに移動
+        // 逆ツリーモードでは、親ノードへの移動を無効化
+        if (treeViewMode === 'reverse') {
+          // 逆ツリーモードでは左キーで何もしない
+          break
+        }
+        
+        // 通常モード: 既に折りたたまれている場合は、親ノードに移動
         // パスから親パスを計算: "1-2-3" -> "1-2"
         if (selectedNodePath) {
           const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
