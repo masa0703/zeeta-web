@@ -694,21 +694,25 @@ function getNodePath(element) {
 function restoreSelection() {
   if (!selectedNodePath && !selectedNodeId) return
 
-  // 逆ツリーモードでは、ルートノード（selectedNodeId）を維持し、
+  // 逆ツリーモードでは、ルートノード（selectedNodeId）を絶対に変更せず維持し、
   // selectedNodePathで指定されたノードを選択状態にする
   if (treeViewMode === 'reverse') {
+    // 逆ツリーモードでは、selectedNodeIdはルートノードのIDであり、絶対に変更してはいけない
+    const rootNodeId = selectedNodeId // ルートノードのIDを保存（変更を防ぐため）
+    
     // ルートノードを選択状態にする（selectedNodePathが指定されていない場合）
-    if (!selectedNodePath && selectedNodeId) {
-      const rootItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"][data-node-path="${selectedNodeId}"]`)
+    if (!selectedNodePath && rootNodeId) {
+      const rootItem = document.querySelector(`.tree-item[data-node-id="${rootNodeId}"][data-node-path="${rootNodeId}"]`)
       if (rootItem) {
         selectedNodeElement = rootItem
-        selectedNodePath = String(selectedNodeId)
+        selectedNodePath = String(rootNodeId)
+        selectedNodeId = rootNodeId // 念のため再設定
         rootItem.classList.add('active')
 
         // エディタに表示
-        fetchNodeById(selectedNodeId).then(node => {
+        fetchNodeById(rootNodeId).then(node => {
           if (node) {
-            axios.get(`/api/nodes/${selectedNodeId}/parents`).then(parentsRes => {
+            axios.get(`/api/nodes/${rootNodeId}/parents`).then(parentsRes => {
               const parents = parentsRes.data.success ? parentsRes.data.data : []
               renderEditor(node, parents)
             })
@@ -723,10 +727,11 @@ function restoreSelection() {
       const item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
       if (item) {
         selectedNodeElement = item
+        selectedNodeId = rootNodeId // ルートノードのIDを必ず維持
         item.classList.add('active')
 
-        // エディタに表示
-        const nodeIdFromPath = parseInt(selectedNodePath.split('-')[selectedNodePath.split('-').length - 1])
+        // エディタに表示（パスの最後のノードIDを使用）
+        const nodeIdFromPath = parseInt(selectedNodePath.split('-').pop())
         fetchNodeById(nodeIdFromPath).then(node => {
           if (node) {
             axios.get(`/api/nodes/${nodeIdFromPath}/parents`).then(parentsRes => {
@@ -740,17 +745,18 @@ function restoreSelection() {
     }
 
     // 見つからない場合は、ルートノードを選択
-    if (selectedNodeId) {
-      const rootItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"]`)
+    if (rootNodeId) {
+      const rootItem = document.querySelector(`.tree-item[data-node-id="${rootNodeId}"]`)
       if (rootItem) {
         selectedNodeElement = rootItem
         selectedNodePath = rootItem.dataset.nodePath
+        selectedNodeId = rootNodeId // ルートノードのIDを必ず維持
         rootItem.classList.add('active')
 
         // エディタに表示
-        fetchNodeById(selectedNodeId).then(node => {
+        fetchNodeById(rootNodeId).then(node => {
           if (node) {
-            axios.get(`/api/nodes/${selectedNodeId}/parents`).then(parentsRes => {
+            axios.get(`/api/nodes/${rootNodeId}/parents`).then(parentsRes => {
               const parents = parentsRes.data.success ? parentsRes.data.data : []
               renderEditor(node, parents)
             })
