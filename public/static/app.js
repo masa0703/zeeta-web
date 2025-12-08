@@ -934,7 +934,7 @@ function renderEditor(node = null, parents = []) {
                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm">${escapeHtml(node.content || '')}</textarea>
           </div>
           <div id="content-preview-tab" class="hidden">
-            <div id="markdown-preview" class="markdown-preview w-full min-h-[300px] px-3 py-2 border border-gray-300 rounded bg-gray-50"></div>
+            <div id="markdown-preview" class="markdown-preview markdown-body w-full min-h-[300px] px-3 py-2 border border-gray-300 rounded bg-white"></div>
           </div>
         </div>
         
