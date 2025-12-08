@@ -1011,9 +1011,20 @@ function renderEditor(node = null, parents = []) {
     ],
     status: ["lines", "words", "cursor"],
     placeholder: "Markdownで内容を入力...",
-    previewRender: function(plainText) {
+    previewRender: function(plainText, preview) {
       // marked.jsを使ってMarkdownをレンダリング
-      return window.marked ? marked.parse(plainText) : plainText
+      let html = plainText
+      if (typeof marked !== 'undefined') {
+        // markedがオブジェクトの場合とグローバル関数の場合の両方に対応
+        if (typeof marked.parse === 'function') {
+          html = marked.parse(plainText)
+        } else if (typeof marked === 'function') {
+          html = marked(plainText)
+        }
+      }
+      // HTMLをpreview要素に直接設定
+      preview.innerHTML = html
+      return html
     }
   })
 }
