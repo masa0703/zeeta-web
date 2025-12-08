@@ -1258,17 +1258,8 @@ function handleArrowKeys(e) {
       // 展開されている場合は折りたたむ
       if (expandedNodes.has(selectedNodeId)) {
         expandedNodes.delete(selectedNodeId)
-        
-        // 逆ツリーモード時はツリー再構築を避けて、DOM操作のみで折りたたむ
-        if (treeViewMode !== 'normal') {
-          const childrenContainer = selectedNodeElement?.parentElement.querySelector('.tree-children')
-          if (childrenContainer) {
-            childrenContainer.classList.remove('expanded')
-          }
-        } else {
-          renderTree()
-          // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
-        }
+        renderTree()
+        // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
       } else {
         // 既に折りたたまれている場合は、親ノードに移動
         // パスから親パスを計算: "1-2-3" -> "1-2"
