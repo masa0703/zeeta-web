@@ -438,8 +438,33 @@ function attachTreeEventListeners() {
 
       const nodeId = parseInt(item.dataset.nodeId)
       const nodePath = item.dataset.nodePath
-      selectedNodeElement = item
-      selectNode(nodeId, nodePath)
+      
+      // 逆ツリーモードでは、ルートノード（selectedNodeId）を変更しない
+      // 選択したノードは詳細表示のためだけに選択状態にする
+      if (treeViewMode === 'reverse') {
+        // ルートノードを変更せず、選択状態のみ更新
+        selectedNodeElement = item
+        selectedNodePath = nodePath
+        
+        // 選択状態を更新
+        document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'))
+        document.querySelectorAll('.tree-item.duplicate-active').forEach(el => el.classList.remove('duplicate-active'))
+        item.classList.add('active')
+        
+        // エディタにノード情報を表示
+        fetchNodeById(nodeId).then(node => {
+          if (node) {
+            axios.get(`/api/nodes/${nodeId}/parents`).then(parentsRes => {
+              const parents = parentsRes.data.success ? parentsRes.data.data : []
+              renderEditor(node, parents)
+            })
+          }
+        })
+      } else {
+        // 通常モードでは従来通り
+        selectedNodeElement = item
+        selectNode(nodeId, nodePath)
+      }
     })
   })
 
@@ -608,7 +633,37 @@ function toggleNode(nodeId) {
   } else {
     expandedNodes.add(nodeId)
   }
+  
+  // 逆ツリーモードでは、ルートノードを維持するため、
+  // renderTree()の前に選択状態を保存しておく
+  const savedSelectedNodePath = selectedNodePath
+  const savedSelectedNodeId = selectedNodeId
+  
   renderTree()
+  
+  // 逆ツリーモードでは、選択状態を復元（ルートノードは変更しない）
+  if (treeViewMode === 'reverse') {
+    // selectedNodeId（ルート）は変更しない
+    // selectedNodePathのみ復元
+    if (savedSelectedNodePath) {
+      const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
+      if (targetElement) {
+        selectedNodeElement = targetElement
+        selectedNodePath = savedSelectedNodePath
+        targetElement.classList.add('active')
+        
+        // エディタに表示
+        fetchNodeById(savedSelectedNodeId).then(node => {
+          if (node) {
+            axios.get(`/api/nodes/${savedSelectedNodeId}/parents`).then(parentsRes => {
+              const parents = parentsRes.data.success ? parentsRes.data.data : []
+              renderEditor(node, parents)
+            })
+          }
+        })
+      }
+    }
+  }
 }
 
 // ===============================
@@ -639,6 +694,74 @@ function getNodePath(element) {
 function restoreSelection() {
   if (!selectedNodePath && !selectedNodeId) return
 
+  // 逆ツリーモードでは、ルートノード（selectedNodeId）を維持し、
+  // selectedNodePathで指定されたノードを選択状態にする
+  if (treeViewMode === 'reverse') {
+    // ルートノードを選択状態にする（selectedNodePathが指定されていない場合）
+    if (!selectedNodePath && selectedNodeId) {
+      const rootItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"][data-node-path="${selectedNodeId}"]`)
+      if (rootItem) {
+        selectedNodeElement = rootItem
+        selectedNodePath = String(selectedNodeId)
+        rootItem.classList.add('active')
+        
+        // エディタに表示
+        fetchNodeById(selectedNodeId).then(node => {
+          if (node) {
+            axios.get(`/api/nodes/${selectedNodeId}/parents`).then(parentsRes => {
+              const parents = parentsRes.data.success ? parentsRes.data.data : []
+              renderEditor(node, parents)
+            })
+          }
+        })
+        return
+      }
+    }
+    
+    // selectedNodePathが指定されている場合、そのノードを選択
+    if (selectedNodePath) {
+      const item = document.querySelector(`.tree-item[data-node-path="${selectedNodePath}"]`)
+      if (item) {
+        selectedNodeElement = item
+        item.classList.add('active')
+        
+        // エディタに表示
+        const nodeIdFromPath = parseInt(selectedNodePath.split('-')[selectedNodePath.split('-').length - 1])
+        fetchNodeById(nodeIdFromPath).then(node => {
+          if (node) {
+            axios.get(`/api/nodes/${nodeIdFromPath}/parents`).then(parentsRes => {
+              const parents = parentsRes.data.success ? parentsRes.data.data : []
+              renderEditor(node, parents)
+            })
+          }
+        })
+        return
+      }
+    }
+    
+    // 見つからない場合は、ルートノードを選択
+    if (selectedNodeId) {
+      const rootItem = document.querySelector(`.tree-item[data-node-id="${selectedNodeId}"]`)
+      if (rootItem) {
+        selectedNodeElement = rootItem
+        selectedNodePath = rootItem.dataset.nodePath
+        rootItem.classList.add('active')
+        
+        // エディタに表示
+        fetchNodeById(selectedNodeId).then(node => {
+          if (node) {
+            axios.get(`/api/nodes/${selectedNodeId}/parents`).then(parentsRes => {
+              const parents = parentsRes.data.success ? parentsRes.data.data : []
+              renderEditor(node, parents)
+            })
+          }
+        })
+      }
+    }
+    return
+  }
+
+  // 通常モードの処理
   let item = null
 
   // まずパスで検索
@@ -1243,41 +1366,89 @@ function handleArrowKeys(e) {
       break
 
     case 'ArrowRight':
-      // 子ノードがある場合は展開
-      const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
-      if (hasChildren) {
-        if (!expandedNodes.has(selectedNodeId)) {
-          expandedNodes.add(selectedNodeId)
-          renderTree()
-          // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
+      if (treeViewMode === 'reverse') {
+        // 逆ツリーモード: 選択されたノード（親ノード）を展開
+        // selectedNodePathからノードIDを取得（パスの最後の部分）
+        const nodeIdToExpand = selectedNodePath ? parseInt(selectedNodePath.split('-').pop()) : selectedNodeId
+        if (nodeIdToExpand) {
+          // 逆ツリーでは、親ノードが子ノードとして表示される
+          // 実際には、選択されたノードが親方向のノードなので、それを展開する
+          const hasChildren = relations.some(rel => rel.child_node_id === nodeIdToExpand)
+          if (hasChildren) {
+            if (!expandedNodes.has(nodeIdToExpand)) {
+              expandedNodes.add(nodeIdToExpand)
+              // 選択状態を保存
+              const savedSelectedNodePath = selectedNodePath
+              const savedSelectedNodeId = selectedNodeId
+              renderTree()
+              // 選択状態を復元（ルートノードは変更しない）
+              if (savedSelectedNodePath) {
+                const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
+                if (targetElement) {
+                  selectedNodeElement = targetElement
+                  selectedNodePath = savedSelectedNodePath
+                  targetElement.classList.add('active')
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // 通常モード: 子ノードがある場合は展開
+        const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
+        if (hasChildren) {
+          if (!expandedNodes.has(selectedNodeId)) {
+            expandedNodes.add(selectedNodeId)
+            renderTree()
+            // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
+          }
         }
       }
       break
-
+      
     case 'ArrowLeft':
-      // 展開されている場合は折りたたむ
-      if (expandedNodes.has(selectedNodeId)) {
-        expandedNodes.delete(selectedNodeId)
-        renderTree()
-        // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
-      } else {
-        // 逆ツリーモードでは、親ノードへの移動を無効化
-        if (treeViewMode === 'reverse') {
-          // 逆ツリーモードでは左キーで何もしない
-          break
+      if (treeViewMode === 'reverse') {
+        // 逆ツリーモード: 展開されている場合は折りたたむ
+        // selectedNodePathからノードIDを取得（パスの最後の部分）
+        const nodeIdToCollapse = selectedNodePath ? parseInt(selectedNodePath.split('-').pop()) : selectedNodeId
+        if (nodeIdToCollapse) {
+          if (expandedNodes.has(nodeIdToCollapse)) {
+            expandedNodes.delete(nodeIdToCollapse)
+            // 選択状態を保存
+            const savedSelectedNodePath = selectedNodePath
+            const savedSelectedNodeId = selectedNodeId
+            renderTree()
+            // 選択状態を復元（ルートノードは変更しない）
+            if (savedSelectedNodePath) {
+              const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
+              if (targetElement) {
+                selectedNodeElement = targetElement
+                selectedNodePath = savedSelectedNodePath
+                targetElement.classList.add('active')
+              }
+            }
+          }
+          // 折りたたまれている場合は何もしない（親ノードへの移動はしない）
         }
-
-        // 通常モード: 既に折りたたまれている場合は、親ノードに移動
-        // パスから親パスを計算: "1-2-3" -> "1-2"
-        if (selectedNodePath) {
-          const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
-          if (lastSeparatorIndex > 0) {
-            const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
-            const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
-
-            if (parentElement) {
-              const parentId = parseInt(parentElement.dataset.nodeId)
-              selectNode(parentId, parentPath)
+      } else {
+        // 通常モード: 展開されている場合は折りたたむ
+        if (expandedNodes.has(selectedNodeId)) {
+          expandedNodes.delete(selectedNodeId)
+          renderTree()
+          // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
+        } else {
+          // 通常モード: 既に折りたたまれている場合は、親ノードに移動
+          // パスから親パスを計算: "1-2-3" -> "1-2"
+          if (selectedNodePath) {
+            const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
+            if (lastSeparatorIndex > 0) {
+              const parentPath = selectedNodePath.substring(0, lastSeparatorIndex)
+              const parentElement = document.querySelector(`.tree-item[data-node-path="${parentPath}"]`)
+              
+              if (parentElement) {
+                const parentId = parseInt(parentElement.dataset.nodeId)
+                selectNode(parentId, parentPath)
+              }
             }
           }
         }
