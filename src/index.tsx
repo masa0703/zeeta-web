@@ -402,62 +402,132 @@ app.get('/', (c) => {
           #editor-panel {
             min-height: 400px;
           }
-          /* EasyMDE Preview Styles */
+          /* EasyMDE Preview Styles - GitHub Style */
           .editor-preview, .editor-preview-side {
-            padding: 10px;
-            background: #fafafa;
+            padding: 16px;
+            background: #ffffff;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #24292e;
           }
           .editor-preview h1, .editor-preview-side h1 {
             font-size: 2em;
-            font-weight: bold;
-            margin: 0.67em 0;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
             border-bottom: 1px solid #eaecef;
             padding-bottom: 0.3em;
+            line-height: 1.25;
           }
           .editor-preview h2, .editor-preview-side h2 {
             font-size: 1.5em;
-            font-weight: bold;
-            margin: 0.75em 0 0.5em 0;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
             border-bottom: 1px solid #eaecef;
             padding-bottom: 0.3em;
+            line-height: 1.25;
           }
           .editor-preview h3, .editor-preview-side h3 {
             font-size: 1.25em;
-            font-weight: bold;
-            margin: 0.83em 0;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            line-height: 1.25;
           }
-          .editor-preview ul, .editor-preview-side ul,
-          .editor-preview ol, .editor-preview-side ol {
-            margin: 1em 0;
+          .editor-preview h4, .editor-preview-side h4 {
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            line-height: 1.25;
+          }
+          .editor-preview h5, .editor-preview-side h5 {
+            font-size: 0.875em;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            line-height: 1.25;
+          }
+          .editor-preview h6, .editor-preview-side h6 {
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            line-height: 1.25;
+            color: #6a737d;
+          }
+          .editor-preview ul, .editor-preview-side ul {
+            margin-top: 0;
+            margin-bottom: 16px;
             padding-left: 2em;
+            list-style-type: disc;
+          }
+          .editor-preview ol, .editor-preview-side ol {
+            margin-top: 0;
+            margin-bottom: 16px;
+            padding-left: 2em;
+            list-style-type: decimal;
           }
           .editor-preview li, .editor-preview-side li {
-            margin: 0.5em 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            line-height: 1.5;
+          }
+          .editor-preview li > p, .editor-preview-side li > p {
+            margin-top: 0;
+            margin-bottom: 8px;
+          }
+          .editor-preview li + li, .editor-preview-side li + li {
+            margin-top: 4px;
           }
           .editor-preview p, .editor-preview-side p {
-            margin: 1em 0;
+            margin-top: 0;
+            margin-bottom: 10px;
           }
           .editor-preview code, .editor-preview-side code {
-            background: #f6f8fa;
+            background: rgba(27,31,35,0.05);
             padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
             border-radius: 3px;
-            font-family: monospace;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
           }
           .editor-preview pre, .editor-preview-side pre {
             background: #f6f8fa;
-            padding: 1em;
-            border-radius: 5px;
-            overflow-x: auto;
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            border-radius: 6px;
+            margin-top: 0;
+            margin-bottom: 16px;
+          }
+          .editor-preview pre code, .editor-preview-side pre code {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            border-radius: 0;
           }
           .editor-preview blockquote, .editor-preview-side blockquote {
-            border-left: 4px solid #dfe2e5;
-            padding-left: 1em;
+            padding: 0 1em;
             color: #6a737d;
-            margin: 1em 0;
+            border-left: 0.25em solid #dfe2e5;
+            margin-top: 0;
+            margin-bottom: 16px;
+          }
+          .editor-preview blockquote > :first-child, .editor-preview-side blockquote > :first-child {
+            margin-top: 0;
+          }
+          .editor-preview blockquote > :last-child, .editor-preview-side blockquote > :last-child {
+            margin-bottom: 0;
           }
           .editor-preview table, .editor-preview-side table {
             border-collapse: collapse;
-            margin: 1em 0;
+            border-spacing: 0;
+            margin-top: 0;
+            margin-bottom: 16px;
           }
           .editor-preview th, .editor-preview-side th,
           .editor-preview td, .editor-preview-side td {
@@ -466,7 +536,25 @@ app.get('/', (c) => {
           }
           .editor-preview th, .editor-preview-side th {
             background: #f6f8fa;
-            font-weight: bold;
+            font-weight: 600;
+          }
+          .editor-preview hr, .editor-preview-side hr {
+            height: 0.25em;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #e1e4e8;
+            border: 0;
+          }
+          .editor-preview a, .editor-preview-side a {
+            color: #0366d6;
+            text-decoration: none;
+          }
+          .editor-preview a:hover, .editor-preview-side a:hover {
+            text-decoration: underline;
+          }
+          .editor-preview img, .editor-preview-side img {
+            max-width: 100%;
+            box-sizing: content-box;
           }
           .search-highlight {
             background-color: #fef08a;
