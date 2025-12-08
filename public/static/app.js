@@ -636,34 +636,17 @@ function toggleNode(nodeId) {
 
   // 逆ツリーモードでは、ルートノードを維持するため、
   // renderTree()の前に選択状態を保存しておく
+  // renderTree()内でrestoreSelection()が呼ばれるため、ここでは保存のみ行う
   const savedSelectedNodePath = selectedNodePath
   const savedSelectedNodeId = selectedNodeId
 
+  // renderTree()を呼ぶ前に、selectedNodePathとselectedNodeIdを設定しておく
+  // これにより、restoreSelection()が正しく動作する
+  selectedNodePath = savedSelectedNodePath
+  selectedNodeId = savedSelectedNodeId
+
   renderTree()
-
-  // 逆ツリーモードでは、選択状態を復元（ルートノードは変更しない）
-  if (treeViewMode === 'reverse') {
-    // selectedNodeId（ルート）は変更しない
-    // selectedNodePathのみ復元
-    if (savedSelectedNodePath) {
-      const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
-      if (targetElement) {
-        selectedNodeElement = targetElement
-        selectedNodePath = savedSelectedNodePath
-        targetElement.classList.add('active')
-
-        // エディタに表示
-        fetchNodeById(savedSelectedNodeId).then(node => {
-          if (node) {
-            axios.get(`/api/nodes/${savedSelectedNodeId}/parents`).then(parentsRes => {
-              const parents = parentsRes.data.success ? parentsRes.data.data : []
-              renderEditor(node, parents)
-            })
-          }
-        })
-      }
-    }
-  }
+  // renderTree()内でrestoreSelection()が呼ばれ、エディタの表示も正しく更新される
 }
 
 // ===============================
@@ -699,7 +682,7 @@ function restoreSelection() {
   if (treeViewMode === 'reverse') {
     // 逆ツリーモードでは、selectedNodeIdはルートノードのIDであり、絶対に変更してはいけない
     const rootNodeId = selectedNodeId // ルートノードのIDを保存（変更を防ぐため）
-    
+
     // ルートノードを選択状態にする（selectedNodePathが指定されていない場合）
     if (!selectedNodePath && rootNodeId) {
       const rootItem = document.querySelector(`.tree-item[data-node-id="${rootNodeId}"][data-node-path="${rootNodeId}"]`)
