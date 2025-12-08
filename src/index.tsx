@@ -372,8 +372,8 @@ app.get('/', (c) => {
             border-left: 3px solid #3b82f6;
           }
           .tree-item.duplicate-active {
-            background-color: #dcfce7;
-            border-left: 3px solid #22c55e;
+            border: 1px dashed #c084fc;
+            border-radius: 4px;
           }
           .tree-item.dragging {
             opacity: 0.5;
