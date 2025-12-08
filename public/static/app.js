@@ -1414,17 +1414,34 @@ function handleArrowKeys(e) {
         if (nodeIdToCollapse) {
           if (expandedNodes.has(nodeIdToCollapse)) {
             expandedNodes.delete(nodeIdToCollapse)
-            // 選択状態を保存
+            // 選択状態を保存（ルートノードのIDを必ず保存）
             const savedSelectedNodePath = selectedNodePath
-            const savedSelectedNodeId = selectedNodeId
+            const savedSelectedNodeId = selectedNodeId // ルートノードのIDを保存
             renderTree()
-            // 選択状態を復元（ルートノードは変更しない）
+            // 選択状態を復元（ルートノードのIDを必ず復元）
+            selectedNodeId = savedSelectedNodeId // ルートノードのIDを復元
             if (savedSelectedNodePath) {
               const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
               if (targetElement) {
                 selectedNodeElement = targetElement
                 selectedNodePath = savedSelectedNodePath
                 targetElement.classList.add('active')
+              } else {
+                // パスが見つからない場合は、ルートノードを選択
+                const rootItem = document.querySelector(`.tree-item[data-node-id="${savedSelectedNodeId}"][data-node-path="${savedSelectedNodeId}"]`)
+                if (rootItem) {
+                  selectedNodeElement = rootItem
+                  selectedNodePath = String(savedSelectedNodeId)
+                  rootItem.classList.add('active')
+                }
+              }
+            } else {
+              // パスが保存されていない場合は、ルートノードを選択
+              const rootItem = document.querySelector(`.tree-item[data-node-id="${savedSelectedNodeId}"][data-node-path="${savedSelectedNodeId}"]`)
+              if (rootItem) {
+                selectedNodeElement = rootItem
+                selectedNodePath = String(savedSelectedNodeId)
+                rootItem.classList.add('active')
               }
             }
           }
