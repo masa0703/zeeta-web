@@ -628,25 +628,35 @@ function isDescendant(ancestorId, nodeId) {
 }
 
 function toggleNode(nodeId) {
+  // DOM要素を探す
+  const toggleIcon = document.querySelector(`.toggle-icon[data-node-id="${nodeId}"]`)
+  if (!toggleIcon) return
+  
+  const treeItem = toggleIcon.closest('.tree-item')
+  if (!treeItem) return
+  
+  const nodeGroup = treeItem.closest('[data-node-group]')
+  if (!nodeGroup) return
+  
+  const childrenContainer = nodeGroup.querySelector('.tree-children')
+  if (!childrenContainer) return
+  
+  // 展開/折りたたみの切り替え
   if (expandedNodes.has(nodeId)) {
+    // 折りたたみ
     expandedNodes.delete(nodeId)
+    childrenContainer.classList.remove('expanded')
+    toggleIcon.classList.remove('fa-chevron-down')
+    toggleIcon.classList.add('fa-chevron-right')
   } else {
+    // 展開
     expandedNodes.add(nodeId)
+    childrenContainer.classList.add('expanded')
+    toggleIcon.classList.remove('fa-chevron-right')
+    toggleIcon.classList.add('fa-chevron-down')
   }
-
-  // 逆ツリーモードでは、ルートノードを維持するため、
-  // renderTree()の前に選択状態を保存しておく
-  // renderTree()内でrestoreSelection()が呼ばれるため、ここでは保存のみ行う
-  const savedSelectedNodePath = selectedNodePath
-  const savedSelectedNodeId = selectedNodeId
-
-  // renderTree()を呼ぶ前に、selectedNodePathとselectedNodeIdを設定しておく
-  // これにより、restoreSelection()が正しく動作する
-  selectedNodePath = savedSelectedNodePath
-  selectedNodeId = savedSelectedNodeId
-
-  renderTree()
-  // renderTree()内でrestoreSelection()が呼ばれ、エディタの表示も正しく更新される
+  
+  // DOM操作のみ、renderTree()は呼ばない
 }
 
 // ===============================
@@ -1355,95 +1365,60 @@ function handleArrowKeys(e) {
       break
 
     case 'ArrowRight':
-      if (treeViewMode === 'reverse') {
-        // 逆ツリーモード: 選択されたノード（親ノード）を展開
-        // selectedNodePathからノードIDを取得（パスの最後の部分）
-        const nodeIdToExpand = selectedNodePath ? parseInt(selectedNodePath.split('-').pop()) : selectedNodeId
-        if (nodeIdToExpand) {
-          // 逆ツリーでは、親ノードが子ノードとして表示される
-          // 実際には、選択されたノードが親方向のノードなので、それを展開する
-          const hasChildren = relations.some(rel => rel.child_node_id === nodeIdToExpand)
-          if (hasChildren) {
-            if (!expandedNodes.has(nodeIdToExpand)) {
-              expandedNodes.add(nodeIdToExpand)
-              // 選択状態を保存
-              const savedSelectedNodePath = selectedNodePath
-              const savedSelectedNodeId = selectedNodeId
-              renderTree()
-              // 選択状態を復元（ルートノードは変更しない）
-              if (savedSelectedNodePath) {
-                const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
-                if (targetElement) {
-                  selectedNodeElement = targetElement
-                  selectedNodePath = savedSelectedNodePath
-                  targetElement.classList.add('active')
-                }
+      if (selectedNodeElement) {
+        // 選択中のノードのIDを取得
+        const nodeIdToExpand = parseInt(selectedNodeElement.dataset.nodeId)
+        
+        // 逆ツリーモードと通常モードで子ノードの判定方法が異なる
+        const hasChildren = treeViewMode === 'reverse'
+          ? relations.some(rel => rel.child_node_id === nodeIdToExpand)
+          : relations.some(rel => rel.parent_node_id === nodeIdToExpand)
+        
+        if (hasChildren && !expandedNodes.has(nodeIdToExpand)) {
+          // 展開状態を更新
+          expandedNodes.add(nodeIdToExpand)
+          
+          // DOM操作のみで展開（renderTreeを呼ばない）
+          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
+          if (nodeGroup) {
+            const childrenContainer = nodeGroup.querySelector('.tree-children')
+            if (childrenContainer) {
+              childrenContainer.classList.add('expanded')
+              // 展開アイコンも更新
+              const toggleIcon = selectedNodeElement.querySelector('.toggle-icon')
+              if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-right')
+                toggleIcon.classList.add('fa-chevron-down')
               }
             }
-          }
-        }
-      } else {
-        // 通常モード: 子ノードがある場合は展開
-        const hasChildren = relations.some(rel => rel.parent_node_id === selectedNodeId)
-        if (hasChildren) {
-          if (!expandedNodes.has(selectedNodeId)) {
-            expandedNodes.add(selectedNodeId)
-            renderTree()
-            // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
           }
         }
       }
       break
 
     case 'ArrowLeft':
-      if (treeViewMode === 'reverse') {
-        // 逆ツリーモード: 展開されている場合は折りたたむ
-        // selectedNodePathからノードIDを取得（パスの最後の部分）
-        const nodeIdToCollapse = selectedNodePath ? parseInt(selectedNodePath.split('-').pop()) : selectedNodeId
-        if (nodeIdToCollapse) {
-          if (expandedNodes.has(nodeIdToCollapse)) {
-            expandedNodes.delete(nodeIdToCollapse)
-            // 選択状態を保存（ルートノードのIDを必ず保存）
-            const savedSelectedNodePath = selectedNodePath
-            const savedSelectedNodeId = selectedNodeId // ルートノードのIDを保存
-            renderTree()
-            // 選択状態を復元（ルートノードのIDを必ず復元）
-            selectedNodeId = savedSelectedNodeId // ルートノードのIDを復元
-            if (savedSelectedNodePath) {
-              const targetElement = document.querySelector(`.tree-item[data-node-path="${savedSelectedNodePath}"]`)
-              if (targetElement) {
-                selectedNodeElement = targetElement
-                selectedNodePath = savedSelectedNodePath
-                targetElement.classList.add('active')
-              } else {
-                // パスが見つからない場合は、ルートノードを選択
-                const rootItem = document.querySelector(`.tree-item[data-node-id="${savedSelectedNodeId}"][data-node-path="${savedSelectedNodeId}"]`)
-                if (rootItem) {
-                  selectedNodeElement = rootItem
-                  selectedNodePath = String(savedSelectedNodeId)
-                  rootItem.classList.add('active')
-                }
-              }
-            } else {
-              // パスが保存されていない場合は、ルートノードを選択
-              const rootItem = document.querySelector(`.tree-item[data-node-id="${savedSelectedNodeId}"][data-node-path="${savedSelectedNodeId}"]`)
-              if (rootItem) {
-                selectedNodeElement = rootItem
-                selectedNodePath = String(savedSelectedNodeId)
-                rootItem.classList.add('active')
+      if (selectedNodeElement) {
+        const nodeIdToCollapse = parseInt(selectedNodeElement.dataset.nodeId)
+        
+        if (expandedNodes.has(nodeIdToCollapse)) {
+          // 展開されている場合は折りたたむ（DOM操作のみ）
+          expandedNodes.delete(nodeIdToCollapse)
+          
+          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
+          if (nodeGroup) {
+            const childrenContainer = nodeGroup.querySelector('.tree-children')
+            if (childrenContainer) {
+              childrenContainer.classList.remove('expanded')
+              // 折りたたみアイコンも更新
+              const toggleIcon = selectedNodeElement.querySelector('.toggle-icon')
+              if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-down')
+                toggleIcon.classList.add('fa-chevron-right')
               }
             }
           }
-          // 折りたたまれている場合は何もしない（親ノードへの移動はしない）
-        }
-      } else {
-        // 通常モード: 展開されている場合は折りたたむ
-        if (expandedNodes.has(selectedNodeId)) {
-          expandedNodes.delete(selectedNodeId)
-          renderTree()
-          // renderTree()内でrestoreSelection()が呼ばれるため、selectedNodeElementは更新される
-        } else {
-          // 通常モード: 既に折りたたまれている場合は、親ノードに移動
+        } else if (treeViewMode === 'normal') {
+          // 通常モードで既に折りたたまれている場合は、親ノードに移動
           // パスから親パスを計算: "1-2-3" -> "1-2"
           if (selectedNodePath) {
             const lastSeparatorIndex = selectedNodePath.lastIndexOf('-')
@@ -1458,6 +1433,7 @@ function handleArrowKeys(e) {
             }
           }
         }
+        // 逆ツリーモードで折りたたまれている場合は何もしない
       }
       break
   }
