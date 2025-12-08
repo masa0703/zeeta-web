@@ -1011,20 +1011,16 @@ function renderEditor(node = null, parents = []) {
     ],
     status: ["lines", "words", "cursor"],
     placeholder: "Markdownで内容を入力...",
-    previewRender: function(plainText, preview) {
+    renderingConfig: {
+      singleLineBreaks: false,
+      codeSyntaxHighlighting: false,
+    },
+    previewRender: function(plainText) {
       // marked.jsを使ってMarkdownをレンダリング
-      let html = plainText
-      if (typeof marked !== 'undefined') {
-        // markedがオブジェクトの場合とグローバル関数の場合の両方に対応
-        if (typeof marked.parse === 'function') {
-          html = marked.parse(plainText)
-        } else if (typeof marked === 'function') {
-          html = marked(plainText)
-        }
+      if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        return marked.parse(plainText)
       }
-      // HTMLをpreview要素に直接設定
-      preview.innerHTML = html
-      return html
+      return plainText
     }
   })
 }

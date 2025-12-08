@@ -402,6 +402,72 @@ app.get('/', (c) => {
           #editor-panel {
             min-height: 400px;
           }
+          /* EasyMDE Preview Styles */
+          .editor-preview, .editor-preview-side {
+            padding: 10px;
+            background: #fafafa;
+          }
+          .editor-preview h1, .editor-preview-side h1 {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 0.67em 0;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+          }
+          .editor-preview h2, .editor-preview-side h2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 0.75em 0 0.5em 0;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+          }
+          .editor-preview h3, .editor-preview-side h3 {
+            font-size: 1.25em;
+            font-weight: bold;
+            margin: 0.83em 0;
+          }
+          .editor-preview ul, .editor-preview-side ul,
+          .editor-preview ol, .editor-preview-side ol {
+            margin: 1em 0;
+            padding-left: 2em;
+          }
+          .editor-preview li, .editor-preview-side li {
+            margin: 0.5em 0;
+          }
+          .editor-preview p, .editor-preview-side p {
+            margin: 1em 0;
+          }
+          .editor-preview code, .editor-preview-side code {
+            background: #f6f8fa;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+          }
+          .editor-preview pre, .editor-preview-side pre {
+            background: #f6f8fa;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+          }
+          .editor-preview blockquote, .editor-preview-side blockquote {
+            border-left: 4px solid #dfe2e5;
+            padding-left: 1em;
+            color: #6a737d;
+            margin: 1em 0;
+          }
+          .editor-preview table, .editor-preview-side table {
+            border-collapse: collapse;
+            margin: 1em 0;
+          }
+          .editor-preview th, .editor-preview-side th,
+          .editor-preview td, .editor-preview-side td {
+            border: 1px solid #dfe2e5;
+            padding: 6px 13px;
+          }
+          .editor-preview th, .editor-preview-side th {
+            background: #f6f8fa;
+            font-weight: bold;
+          }
           .search-highlight {
             background-color: #fef08a;
             font-weight: 600;
