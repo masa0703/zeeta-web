@@ -1,6 +1,8 @@
 // ===============================
 // グローバル状態管理
 // ===============================
+let authToken = localStorage.getItem('token')
+let currentUser = null
 let nodes = []
 let relations = []
 let selectedNodeId = null
@@ -11,6 +13,120 @@ let searchQuery = ''
 let searchResults = []
 let clipboard = null // コピーしたノードのID
 let treeViewMode = 'normal' // 'normal' or 'reverse'
+
+// ===============================
+// 認証機能
+// ===============================
+
+// Axios Interceptor
+axios.interceptors.request.use(config => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`
+  }
+  return config
+})
+
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      logout()
+    }
+    return Promise.reject(error)
+  }
+)
+
+async function checkAuth() {
+  if (!authToken) {
+    showLogin()
+    return
+  }
+
+  try {
+    const res = await axios.get('/api/auth/me')
+    if (res.data.success) {
+      currentUser = res.data.data
+      showMainApp()
+    } else {
+      logout()
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error)
+    logout()
+  }
+}
+
+function login(username, password) {
+  showLoading()
+  axios.post('/api/auth/login', { username, password })
+    .then(res => {
+      if (res.data.success) {
+        authToken = res.data.token
+        localStorage.setItem('token', authToken)
+        currentUser = res.data.user
+        showMainApp()
+        showToast('ログインしました', 'success')
+      }
+    })
+    .catch(err => {
+      const msg = err.response?.data?.error || 'Login failed'
+      showToast(msg, 'error')
+    })
+    .finally(() => hideLoading())
+}
+
+function register(username, password, email) {
+  showLoading()
+  axios.post('/api/auth/register', { username, password, email })
+    .then(res => {
+      if (res.data.success) {
+        showToast('アカウントを作成しました。確認メールを送信しましたので、メール内のリンクをクリックして認証を完了してください。', 'success')
+        // ログイン画面へ
+        document.getElementById('register-form').classList.add('hidden')
+        document.getElementById('login-form').classList.remove('hidden')
+        document.getElementById('auth-title').textContent = 'Zeeta Web'
+        document.getElementById('auth-subtitle').textContent = 'Sign in to your account'
+        // 自動入力
+        document.getElementById('login-username').value = username
+        document.getElementById('login-password').value = password
+      }
+    })
+    .catch(err => {
+      const msg = err.response?.data?.error || 'Registration failed'
+      showToast(msg, 'error')
+    })
+    .finally(() => hideLoading())
+}
+
+function logout() {
+  authToken = null
+  currentUser = null
+  localStorage.removeItem('token')
+  showLogin()
+}
+
+function showLogin() {
+  document.getElementById('auth-container').style.display = 'flex'
+  document.getElementById('main-container').style.display = 'none'
+  
+  // フォーム初期化
+  document.getElementById('login-form').classList.remove('hidden')
+  document.getElementById('register-form').classList.add('hidden')
+  document.getElementById('auth-title').textContent = 'Zeeta Web'
+  document.getElementById('auth-subtitle').textContent = 'Sign in to your account'
+}
+
+function showMainApp() {
+  document.getElementById('auth-container').style.display = 'none'
+  document.getElementById('main-container').style.display = 'flex'
+  
+  if (currentUser) {
+    document.getElementById('current-username').textContent = currentUser.username
+  }
+  
+  fetchVersion()
+  fetchNodes()
+}
 
 // ===============================
 // ユーティリティ関数
@@ -1243,7 +1359,8 @@ async function addRootNode() {
   const title = prompt('ルートノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
-  const author = prompt('作成者名を入力してください:', 'Admin')
+  const defaultAuthor = currentUser ? currentUser.username : 'Admin'
+  const author = prompt('作成者名を入力してください:', defaultAuthor)
   if (!author || !author.trim()) return
 
   showLoading()
@@ -1268,7 +1385,8 @@ async function addChildNode(parentId) {
   const title = prompt('子ノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
-  const author = prompt('作成者名を入力してください:', 'Admin')
+  const defaultAuthor = currentUser ? currentUser.username : 'Admin'
+  const author = prompt('作成者名を入力してください:', defaultAuthor)
   if (!author || !author.trim()) return
 
   showLoading()
@@ -1606,6 +1724,60 @@ function handleArrowKeys(e) {
 // 初期化
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
+  // Auth Event Listeners
+  const loginForm = document.getElementById('login-form')
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const username = e.target.username.value
+      const password = e.target.password.value
+      login(username, password)
+    })
+  }
+
+  const registerForm = document.getElementById('register-form')
+  if (registerForm) {
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const username = e.target.username.value
+      const password = e.target.password.value
+      const email = e.target.email.value
+      register(username, password, email)
+    })
+  }
+  
+  const toRegisterLink = document.getElementById('to-register-link')
+  if (toRegisterLink) {
+    toRegisterLink.addEventListener('click', (e) => {
+      e.preventDefault()
+      document.getElementById('login-form').classList.add('hidden')
+      document.getElementById('register-form').classList.remove('hidden')
+      document.getElementById('auth-title').textContent = 'Create Account'
+      document.getElementById('auth-subtitle').textContent = 'Sign up for a new account'
+    })
+  }
+  
+  const toLoginLink = document.getElementById('to-login-link')
+  if (toLoginLink) {
+    toLoginLink.addEventListener('click', (e) => {
+      e.preventDefault()
+      document.getElementById('register-form').classList.add('hidden')
+      document.getElementById('login-form').classList.remove('hidden')
+      document.getElementById('auth-title').textContent = 'Zeeta Web'
+      document.getElementById('auth-subtitle').textContent = 'Sign in to your account'
+    })
+  }
+  
+  const logoutBtn = document.getElementById('logout-btn')
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      if (confirm('ログアウトしますか？')) {
+        logout()
+      }
+    })
+  }
+
   // ルートノード追加ボタン
   document.getElementById('add-root-btn').addEventListener('click', addRootNode)
 
@@ -1636,7 +1808,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', handlePaste)
   document.addEventListener('keydown', handleArrowKeys)
 
-  // 初期データ読み込み
-  fetchVersion()
-  fetchNodes()
+  // Auth Check Start
+  checkAuth()
 })
