@@ -1373,12 +1373,7 @@ function handleCopy(e) {
     clipboard = selectedNodeId
 
     // 視覚的フィードバック
-    const notification = document.createElement('div')
-    notification.textContent = 'ノードをコピーしました'
-    notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50'
-    document.body.appendChild(notification)
-
-    setTimeout(() => notification.remove(), 2000)
+    showToast('ノードをコピーしました', 'success')
   }
 }
 
@@ -1397,12 +1392,7 @@ async function handlePaste(e) {
 
     if (success) {
       // 視覚的フィードバック
-      const notification = document.createElement('div')
-      notification.textContent = '親子関係を追加しました'
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50'
-      document.body.appendChild(notification)
-
-      setTimeout(() => notification.remove(), 2000)
+      showToast('親子関係を追加しました', 'success')
 
       // 親ノードを展開
       expandedNodes.add(selectedNodeId)
