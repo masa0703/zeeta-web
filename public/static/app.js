@@ -150,6 +150,7 @@ async function createNode(nodeData) {
     const response = await axios.post('/api/nodes', nodeData)
     if (response.data.success) {
       await fetchNodes()
+      showToast('ノードを追加しました', 'success')
       return response.data.data
     }
   } catch (error) {
@@ -1250,7 +1251,6 @@ async function addRootNode() {
     })
 
     if (node) {
-      showToast('ノードを追加しました', 'success')
       expandedNodes.add(node.id)
       await selectNode(node.id)
     }
@@ -1279,7 +1279,6 @@ async function addChildNode(parentId) {
     if (node) {
       // 親子関係を追加
       await addRelation(parentId, node.id)
-      showToast('ノードを追加しました', 'success')
       expandedNodes.add(parentId)
       await selectNode(node.id)
     }
