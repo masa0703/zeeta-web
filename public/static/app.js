@@ -416,8 +416,8 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
   const showAddChildBtn = treeViewMode === 'normal'
 
   let html = `
-    <div data-node-group="${node.id}">
-      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
+    <div class="tree-node-wrapper">
+      <div data-node-group="${node.id}" class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
            data-node-id="${node.id}"
            data-node-path="${currentPath}">
@@ -527,12 +527,13 @@ function setupDragAndDrop() {
   new Sortable(treeContainer, {
     animation: 150,
     handle: '.drag-handle',
+    draggable: '[data-node-group]',
     ghostClass: 'dragging',
     group: 'nested',
     fallbackOnBody: true,
     swapThreshold: 0.65,
     onStart: function (evt) {
-      const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+      const nodeId = parseInt(evt.item.dataset.nodeId)
       window.currentDraggedNodeId = nodeId
 
       // ノード上へのドロップ検出を有効化
@@ -548,7 +549,7 @@ function setupDragAndDrop() {
         return
       }
 
-      const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+      const nodeId = parseInt(evt.item.dataset.nodeId)
       const newIndex = evt.newIndex
 
       window.currentDraggedNodeId = null
@@ -563,12 +564,13 @@ function setupDragAndDrop() {
     new Sortable(container, {
       animation: 150,
       handle: '.drag-handle',
+      draggable: '[data-node-group]',
       ghostClass: 'dragging',
       group: 'nested',
       fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: function (evt) {
-        const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+        const nodeId = parseInt(evt.item.dataset.nodeId)
         window.currentDraggedNodeId = nodeId
 
         // ノード上へのドロップ検出を有効化
@@ -584,7 +586,7 @@ function setupDragAndDrop() {
           return
         }
 
-        const nodeId = parseInt(evt.item.querySelector('.tree-item').dataset.nodeId)
+        const nodeId = parseInt(evt.item.dataset.nodeId)
         const newIndex = evt.newIndex
         const newParentId = evt.to.dataset.parent ? parseInt(evt.to.dataset.parent) : null
 
