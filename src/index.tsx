@@ -56,7 +56,7 @@ app.get('/api/nodes/:id/children', async (c) => {
       `SELECT n.* FROM nodes n
        INNER JOIN node_relations nr ON n.id = nr.child_node_id
        WHERE nr.parent_node_id = ?
-       ORDER BY n.position, n.created_at`
+       ORDER BY nr.position, n.created_at`
     ).bind(id).all()
     
     return c.json({ success: true, data: results })
@@ -73,7 +73,7 @@ app.get('/api/nodes/:id/parents', async (c) => {
       `SELECT n.* FROM nodes n
        INNER JOIN node_relations nr ON n.id = nr.parent_node_id
        WHERE nr.child_node_id = ?
-       ORDER BY n.position, n.created_at`
+       ORDER BY n.created_at`
     ).bind(id).all()
     
     return c.json({ success: true, data: results })
@@ -88,7 +88,7 @@ app.get('/api/nodes/root/list', async (c) => {
     const { results } = await c.env.DB.prepare(
       `SELECT * FROM nodes
        WHERE id NOT IN (SELECT child_node_id FROM node_relations)
-       ORDER BY position, created_at`
+       ORDER BY created_at`
     ).all()
     
     return c.json({ success: true, data: results })
