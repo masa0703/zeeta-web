@@ -1030,12 +1030,11 @@ function renderEditor(node = null, parents = []) {
             </button>
           </div>
         </div>
-        
-        ${parentsHtml}
       </div>
       
       <!-- スクロール可能なコンテンツエリア -->
       <div class="flex-1 overflow-y-auto space-y-4">
+        ${parentsHtml}
         <!-- タイトル -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
