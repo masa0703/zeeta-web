@@ -46,7 +46,7 @@ function showToast(message, type = 'success', duration = 5000) {
   toast.className = `toast toast-${type}`
   
   // アイコンを決定
-  const icon = type === 'success' ? 'ℹ' : '⚠'
+  const icon = type === 'success' ? '✓' : '⚠'
   
   toast.innerHTML = `
     <div class="toast-icon">${icon}</div>

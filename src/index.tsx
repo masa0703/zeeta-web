@@ -698,7 +698,7 @@ app.get('/', (c) => {
             transform: translateX(0);
           }
           .toast-success {
-            background: #3b82f6;
+            background: #10b981;
             color: white;
           }
           .toast-error {
@@ -717,7 +717,7 @@ app.get('/', (c) => {
             font-size: 16px;
           }
           .toast-success .toast-icon {
-            color: #3b82f6;
+            color: #10b981;
           }
           .toast-error .toast-icon {
             color: #ef4444;
