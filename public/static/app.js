@@ -1126,6 +1126,11 @@ function renderEditor(node = null, parents = []) {
     previewRender: function(plainText) {
       // marked.jsを使ってMarkdownをレンダリング
       if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        // 単一改行も<br>に変換（GitHub Flavored Markdown互換）
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        })
         return marked.parse(plainText)
       }
       return plainText
