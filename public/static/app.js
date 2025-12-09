@@ -154,6 +154,39 @@ async function moveNode(nodeId, newParentId, newPosition) {
   }
 }
 
+// 同じ階層の全ノードの position を一括更新
+async function reorderNodes(container) {
+  try {
+    // コンテナ内の全ノードを取得（DOM順）
+    const nodeElements = container.querySelectorAll(':scope > [data-node-group]')
+    
+    // 各ノードの position を順番に更新
+    const updates = []
+    nodeElements.forEach((element, index) => {
+      const treeItem = element.querySelector('.tree-item')
+      const nodeId = parseInt(treeItem.dataset.nodeId)
+      
+      // parent_id を取得（ルートの場合は null、子要素の場合は親のID）
+      const parentId = container.dataset.parent ? parseInt(container.dataset.parent) : null
+      
+      updates.push(
+        axios.patch(`/api/nodes/${nodeId}/parent`, {
+          parent_id: parentId,
+          position: index
+        })
+      )
+    })
+    
+    // 全ての更新を並列実行
+    await Promise.all(updates)
+    await fetchNodes()
+    return true
+  } catch (error) {
+    console.error('Failed to reorder nodes:', error)
+    return false
+  }
+}
+
 async function searchNodes(query) {
   try {
     const response = await axios.get(`/api/search?q=${encodeURIComponent(query)}`)
@@ -550,12 +583,10 @@ function setupDragAndDrop() {
         return
       }
 
-      const treeItem = evt.item.querySelector('.tree-item')
-      const nodeId = parseInt(treeItem.dataset.nodeId)
-      const newIndex = evt.newIndex
-
       window.currentDraggedNodeId = null
-      await moveNode(nodeId, null, newIndex)
+      
+      // コンテナ内の全ノードの順序を更新
+      await reorderNodes(evt.to)
     }
   })
 
@@ -589,13 +620,10 @@ function setupDragAndDrop() {
           return
         }
 
-        const treeItem = evt.item.querySelector('.tree-item')
-        const nodeId = parseInt(treeItem.dataset.nodeId)
-        const newIndex = evt.newIndex
-        const newParentId = evt.to.dataset.parent ? parseInt(evt.to.dataset.parent) : null
-
         window.currentDraggedNodeId = null
-        await moveNode(nodeId, newParentId, newIndex)
+        
+        // コンテナ内の全ノードの順序を更新
+        await reorderNodes(evt.to)
       }
     })
   })
