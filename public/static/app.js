@@ -1016,22 +1016,26 @@ function renderEditor(node = null, parents = []) {
   ` : ''
 
   editorPanel.innerHTML = `
-    <div class="mb-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-bold text-gray-800">ノード詳細</h2>
-        <div class="flex gap-2">
-          <button id="delete-node-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-            <i class="fas fa-trash mr-2"></i>削除
-          </button>
-          <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            <i class="fas fa-save mr-2"></i>保存
-          </button>
+    <div class="flex flex-col h-full">
+      <!-- 固定ヘッダー部分 -->
+      <div class="flex-shrink-0 mb-3">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">ノード詳細</h2>
+          <div class="flex gap-2">
+            <button id="delete-node-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+              <i class="fas fa-trash mr-2"></i>削除
+            </button>
+            <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <i class="fas fa-save mr-2"></i>保存
+            </button>
+          </div>
         </div>
+        
+        ${parentsHtml}
       </div>
       
-      ${parentsHtml}
-      
-      <div class="space-y-4">
+      <!-- スクロール可能なコンテンツエリア -->
+      <div class="flex-1 overflow-y-auto space-y-4">
         <!-- タイトル -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -1075,6 +1079,7 @@ function renderEditor(node = null, parents = []) {
             <div class="text-sm text-gray-700">${formatDate(node.updated_at)}</div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   `

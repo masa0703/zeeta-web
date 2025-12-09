@@ -459,7 +459,7 @@ app.get('/', (c) => {
             max-height: 2000px;
           }
           #editor-panel {
-            min-height: 400px;
+            /* 高さは親要素に合わせる */
           }
           /* EasyMDE Preview Styles - GitHub Style */
           .editor-preview, .editor-preview-side {
@@ -699,8 +699,8 @@ app.get('/', (c) => {
             <div id="resize-handle" class="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors"></div>
 
             <!-- 右ペイン: ノード詳細 -->
-            <div class="flex-1 p-6 overflow-y-auto" id="editor-pane">
-                <div id="editor-panel" class="bg-white rounded-lg shadow p-6">
+            <div class="flex-1 p-3 overflow-hidden" id="editor-pane">
+                <div id="editor-panel" class="bg-white rounded-lg shadow p-6 h-full">
                     <div class="text-center text-gray-400 py-12">
                         <i class="fas fa-arrow-left text-4xl mb-4"></i>
                         <p>左側のノードを選択してください</p>
