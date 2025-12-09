@@ -559,8 +559,8 @@ function setupDragAndDrop() {
     }
   })
 
-  // 子要素のSortable
-  document.querySelectorAll('.tree-children.expanded').forEach(container => {
+  // 子要素のSortable（展開状態に関わらず全ての.tree-childrenに設定）
+  document.querySelectorAll('.tree-children').forEach(container => {
     const parentId = parseInt(container.dataset.parent)
 
     new Sortable(container, {
