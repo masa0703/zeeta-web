@@ -683,15 +683,14 @@ app.get('/', (c) => {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: white;
             padding: 16px 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             gap: 12px;
             z-index: 10000;
-            min-width: 300px;
+            min-width: 320px;
             transform: translateX(400px);
             transition: transform 0.3s ease-out;
           }
@@ -699,21 +698,42 @@ app.get('/', (c) => {
             transform: translateX(0);
           }
           .toast-success {
-            border-left: 4px solid #10b981;
+            background: #3b82f6;
+            color: white;
           }
           .toast-error {
-            border-left: 4px solid #ef4444;
+            background: #ef4444;
+            color: white;
+          }
+          .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+          }
+          .toast-success .toast-icon {
+            color: #3b82f6;
+          }
+          .toast-error .toast-icon {
+            color: #ef4444;
           }
           .toast-message {
             flex: 1;
-            font-size: 14px;
-            color: #1f2937;
+            font-size: 15px;
+            font-weight: 500;
+            color: white;
           }
           .toast-close {
             background: none;
             border: none;
             font-size: 20px;
-            color: #9ca3af;
+            color: white;
+            opacity: 0.8;
             cursor: pointer;
             padding: 0;
             width: 24px;
@@ -723,10 +743,11 @@ app.get('/', (c) => {
             justify-content: center;
             border-radius: 4px;
             transition: all 0.2s;
+            flex-shrink: 0;
           }
           .toast-close:hover {
-            background: #f3f4f6;
-            color: #4b5563;
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.2);
           }
         </style>
     </head>

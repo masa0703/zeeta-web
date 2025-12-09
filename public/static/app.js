@@ -44,7 +44,12 @@ function hideLoading() {
 function showToast(message, type = 'success', duration = 5000) {
   const toast = document.createElement('div')
   toast.className = `toast toast-${type}`
+  
+  // アイコンを決定
+  const icon = type === 'success' ? 'ℹ' : '⚠'
+  
   toast.innerHTML = `
+    <div class="toast-icon">${icon}</div>
     <span class="toast-message">${message}</span>
     <button class="toast-close" onclick="this.parentElement.remove()">×</button>
   `
