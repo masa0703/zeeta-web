@@ -273,11 +273,31 @@ function buildTree() {
     }
   })
 
+  // 各親ノードの children を position でソート
+  nodeMap.forEach(node => {
+    if (node.children.length > 0) {
+      node.children.sort((a, b) => {
+        if (a.position !== b.position) {
+          return a.position - b.position
+        }
+        return new Date(a.created_at) - new Date(b.created_at)
+      })
+    }
+  })
+
   // 親を持たないノードをルートとする
   nodes.forEach(node => {
     if (!childNodeIds.has(node.id)) {
       rootNodes.push(nodeMap.get(node.id))
     }
+  })
+
+  // ルートノードも position でソート
+  rootNodes.sort((a, b) => {
+    if (a.position !== b.position) {
+      return a.position - b.position
+    }
+    return new Date(a.created_at) - new Date(b.created_at)
   })
 
   return rootNodes
@@ -306,6 +326,18 @@ function buildReverseTree() {
       // 逆ツリーでは、子ノードの children に親ノードを追加
       child.children.push(parent)
       parent.parents.push(child)
+    }
+  })
+
+  // 各ノードの children を position でソート（逆ツリーでも親ノードを順序よく表示）
+  nodeMap.forEach(node => {
+    if (node.children.length > 0) {
+      node.children.sort((a, b) => {
+        if (a.position !== b.position) {
+          return a.position - b.position
+        }
+        return new Date(a.created_at) - new Date(b.created_at)
+      })
     }
   })
 
