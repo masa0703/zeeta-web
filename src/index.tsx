@@ -88,7 +88,7 @@ app.get('/api/nodes/root/list', async (c) => {
     const { results } = await c.env.DB.prepare(
       `SELECT * FROM nodes
        WHERE id NOT IN (SELECT child_node_id FROM node_relations)
-       ORDER BY created_at`
+       ORDER BY root_position, created_at`
     ).all()
     
     return c.json({ success: true, data: results })
@@ -114,19 +114,29 @@ app.get('/api/relations', async (c) => {
 app.post('/api/nodes', async (c) => {
   try {
     const body = await c.req.json()
-    const { title, content, author } = body
+    const { title, content, author, root_position } = body
     
     if (!title || !author) {
       return c.json({ success: false, error: 'Title and author are required' }, 400)
     }
     
+    // root_positionが指定されていない場合、最大値+1を使用
+    let finalRootPosition = root_position
+    if (finalRootPosition === undefined) {
+      const maxPosResult = await c.env.DB.prepare(
+        'SELECT COALESCE(MAX(root_position), -1) as max_pos FROM nodes'
+      ).first()
+      finalRootPosition = (maxPosResult?.max_pos as number) + 1
+    }
+    
     const result = await c.env.DB.prepare(
-      `INSERT INTO nodes (title, content, author) 
-       VALUES (?, ?, ?) RETURNING *`
+      `INSERT INTO nodes (title, content, author, root_position) 
+       VALUES (?, ?, ?, ?) RETURNING *`
     ).bind(
       title,
       content || '',
-      author
+      author,
+      finalRootPosition
     ).first()
     
     return c.json({ success: true, data: result }, 201)
@@ -320,6 +330,37 @@ app.patch('/api/relations/:parent_id/:child_id/position', async (c) => {
     const updated = await c.env.DB.prepare(
       'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(parentId, childId).first()
+    
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ルートノードのroot_position更新（ドラッグ&ドロップ用）
+app.patch('/api/nodes/:id/root-position', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    const { root_position } = body
+    
+    // ノードの存在確認
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM nodes WHERE id = ?'
+    ).bind(id).first()
+    
+    if (!existing) {
+      return c.json({ success: false, error: 'Node not found' }, 404)
+    }
+    
+    // root_positionを更新
+    await c.env.DB.prepare(
+      'UPDATE nodes SET root_position = ? WHERE id = ?'
+    ).bind(root_position || 0, id).run()
+    
+    const updated = await c.env.DB.prepare(
+      'SELECT * FROM nodes WHERE id = ?'
+    ).bind(id).first()
     
     return c.json({ success: true, data: updated })
   } catch (error) {

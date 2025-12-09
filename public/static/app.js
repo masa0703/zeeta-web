@@ -170,22 +170,27 @@ async function reorderNodes(container) {
       parentId = parseInt(container.dataset.parent)
     }
     
-    // 各リレーションの position を順番に更新
+    // 各ノードの position を順番に更新
     const updates = []
     nodeElements.forEach((element, index) => {
       const treeItem = element.querySelector('.tree-item')
-      const childId = parseInt(treeItem.dataset.nodeId)
+      const nodeId = parseInt(treeItem.dataset.nodeId)
       
       if (parentId !== null) {
         // 親子関係のposition更新
         updates.push(
-          axios.patch(`/api/relations/${parentId}/${childId}/position`, {
+          axios.patch(`/api/relations/${parentId}/${nodeId}/position`, {
             position: index
           })
         )
+      } else {
+        // ルートノードのroot_position更新
+        updates.push(
+          axios.patch(`/api/nodes/${nodeId}/root-position`, {
+            root_position: index
+          })
+        )
       }
-      // ルートノード（parentId === null）の場合は何もしない
-      // ルートノードの順序は現在サポートされていない
     })
     
     // 全ての更新を並列実行
@@ -341,8 +346,11 @@ function buildTree() {
     }
   })
 
-  // ルートノードは created_at でソート（ルートノードにはposition情報がない）
+  // ルートノードは root_position でソート
   rootNodes.sort((a, b) => {
+    if (a.root_position !== b.root_position) {
+      return a.root_position - b.root_position
+    }
     return new Date(a.created_at) - new Date(b.created_at)
   })
 
