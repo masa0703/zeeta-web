@@ -101,7 +101,7 @@ app.get('/api/nodes/root/list', async (c) => {
 app.get('/api/relations', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM node_relations ORDER BY created_at'
+      'SELECT * FROM node_relations ORDER BY parent_node_id, position'
     ).all()
     
     return c.json({ success: true, data: results })
@@ -114,20 +114,19 @@ app.get('/api/relations', async (c) => {
 app.post('/api/nodes', async (c) => {
   try {
     const body = await c.req.json()
-    const { title, content, author, position } = body
+    const { title, content, author } = body
     
     if (!title || !author) {
       return c.json({ success: false, error: 'Title and author are required' }, 400)
     }
     
     const result = await c.env.DB.prepare(
-      `INSERT INTO nodes (title, content, author, position) 
-       VALUES (?, ?, ?, ?) RETURNING *`
+      `INSERT INTO nodes (title, content, author) 
+       VALUES (?, ?, ?) RETURNING *`
     ).bind(
       title,
       content || '',
-      author,
-      position || 0
+      author
     ).first()
     
     return c.json({ success: true, data: result }, 201)
@@ -141,7 +140,7 @@ app.put('/api/nodes/:id', async (c) => {
   try {
     const id = c.req.param('id')
     const body = await c.req.json()
-    const { title, content, author, position } = body
+    const { title, content, author } = body
     
     // 現在のノード情報を取得
     const existing = await c.env.DB.prepare(
@@ -225,10 +224,17 @@ app.post('/api/relations', async (c) => {
       return c.json({ success: false, error: 'Relation already exists' }, 400)
     }
     
+    // 新しいリレーションの位置を計算（親の最後に追加）
+    const maxPosResult = await c.env.DB.prepare(
+      'SELECT COALESCE(MAX(position), -1) as max_pos FROM node_relations WHERE parent_node_id = ?'
+    ).bind(parent_node_id).first()
+    
+    const newPosition = (maxPosResult?.max_pos as number) + 1
+    
     // リレーション追加
     const result = await c.env.DB.prepare(
-      'INSERT INTO node_relations (parent_node_id, child_node_id) VALUES (?, ?) RETURNING *'
-    ).bind(parent_node_id, child_node_id).first()
+      'INSERT INTO node_relations (parent_node_id, child_node_id, position) VALUES (?, ?, ?) RETURNING *'
+    ).bind(parent_node_id, child_node_id, newPosition).first()
     
     return c.json({ success: true, data: result }, 201)
   } catch (error) {
@@ -290,37 +296,32 @@ async function getAncestors(db: D1Database, nodeId: number): Promise<number[]> {
   return ancestors
 }
 
-// ノードの親変更
-// ノードのposition更新（ドラッグ&ドロップ用）
-app.patch('/api/nodes/:id/position', async (c) => {
+// リレーションのposition更新（ドラッグ&ドロップ用）
+app.patch('/api/relations/:parent_id/:child_id/position', async (c) => {
   try {
-    const id = c.req.param('id')
+    const parentId = c.req.param('parent_id')
+    const childId = c.req.param('child_id')
     const body = await c.req.json()
     const { position } = body
     
+    // リレーションの存在確認
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(parentId, childId).first()
+    
+    if (!existing) {
+      return c.json({ success: false, error: 'Relation not found' }, 404)
+    }
+    
+    // positionを更新
     await c.env.DB.prepare(
-      'UPDATE nodes SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(position || 0, id).run()
+      'UPDATE node_relations SET position = ? WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(position || 0, parentId, childId).run()
     
-    const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ?').bind(id).first()
-    return c.json({ success: true, data: updated })
-  } catch (error) {
-    return c.json({ success: false, error: String(error) }, 500)
-  }
-})
-
-// 後方互換性のため /api/nodes/:id/parent も残す（同じ処理）
-app.patch('/api/nodes/:id/parent', async (c) => {
-  try {
-    const id = c.req.param('id')
-    const body = await c.req.json()
-    const { position } = body
+    const updated = await c.env.DB.prepare(
+      'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(parentId, childId).first()
     
-    await c.env.DB.prepare(
-      'UPDATE nodes SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(position || 0, id).run()
-    
-    const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ?').bind(id).first()
     return c.json({ success: true, data: updated })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)

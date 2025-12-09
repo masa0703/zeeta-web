@@ -160,17 +160,32 @@ async function reorderNodes(container) {
     // コンテナ内の全ノードを取得（DOM順）
     const nodeElements = container.querySelectorAll(':scope > [data-node-group]')
     
-    // 各ノードの position を順番に更新
+    // 親ノードIDを特定
+    let parentId = null
+    if (container.id === 'tree-container') {
+      // ルートレベル: parentIdはnull（ルートノード）
+      parentId = null
+    } else {
+      // 子レベル: data-parent属性から親IDを取得
+      parentId = parseInt(container.dataset.parent)
+    }
+    
+    // 各リレーションの position を順番に更新
     const updates = []
     nodeElements.forEach((element, index) => {
       const treeItem = element.querySelector('.tree-item')
-      const nodeId = parseInt(treeItem.dataset.nodeId)
+      const childId = parseInt(treeItem.dataset.nodeId)
       
-      updates.push(
-        axios.patch(`/api/nodes/${nodeId}/position`, {
-          position: index
-        })
-      )
+      if (parentId !== null) {
+        // 親子関係のposition更新
+        updates.push(
+          axios.patch(`/api/relations/${parentId}/${childId}/position`, {
+            position: index
+          })
+        )
+      }
+      // ルートノード（parentId === null）の場合は何もしない
+      // ルートノードの順序は現在サポートされていない
     })
     
     // 全ての更新を並列実行
@@ -293,23 +308,26 @@ function buildTree() {
   })
 
   // リレーションベースで親子関係を構築
+  // 各リレーションのpositionを子ノードに保持
   relations.forEach(rel => {
     const parent = nodeMap.get(rel.parent_node_id)
     const child = nodeMap.get(rel.child_node_id)
 
     if (parent && child) {
-      parent.children.push(child)
+      // 子ノードにこのリレーション固有のpositionを付与
+      const childWithPosition = { ...child, relationPosition: rel.position || 0 }
+      parent.children.push(childWithPosition)
       child.parents.push(parent)
       childNodeIds.add(rel.child_node_id)
     }
   })
 
-  // 各親ノードの children を position でソート
+  // 各親ノードの children を relationPosition でソート
   nodeMap.forEach(node => {
     if (node.children.length > 0) {
       node.children.sort((a, b) => {
-        if (a.position !== b.position) {
-          return a.position - b.position
+        if (a.relationPosition !== b.relationPosition) {
+          return a.relationPosition - b.relationPosition
         }
         return new Date(a.created_at) - new Date(b.created_at)
       })
@@ -323,11 +341,8 @@ function buildTree() {
     }
   })
 
-  // ルートノードも position でソート
+  // ルートノードは created_at でソート（ルートノードにはposition情報がない）
   rootNodes.sort((a, b) => {
-    if (a.position !== b.position) {
-      return a.position - b.position
-    }
     return new Date(a.created_at) - new Date(b.created_at)
   })
 
@@ -355,19 +370,18 @@ function buildReverseTree() {
 
     if (parent && child) {
       // 逆ツリーでは、子ノードの children に親ノードを追加
-      child.children.push(parent)
+      // リレーション作成順を保持
+      const parentWithOrder = { ...parent, relationCreatedAt: rel.created_at }
+      child.children.push(parentWithOrder)
       parent.parents.push(child)
     }
   })
 
-  // 各ノードの children を position でソート（逆ツリーでも親ノードを順序よく表示）
+  // 各ノードの children をリレーション作成順でソート（逆ツリーの親ノード表示順）
   nodeMap.forEach(node => {
     if (node.children.length > 0) {
       node.children.sort((a, b) => {
-        if (a.position !== b.position) {
-          return a.position - b.position
-        }
-        return new Date(a.created_at) - new Date(b.created_at)
+        return new Date(a.relationCreatedAt || a.created_at) - new Date(b.relationCreatedAt || b.created_at)
       })
     }
   })
