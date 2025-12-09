@@ -180,7 +180,7 @@ async function updateNode(id, nodeData) {
 }
 
 async function deleteNode(id) {
-  if (!confirm('このノードを削除しますか？\n（子ノードも削除されます）')) {
+  if (!confirm('このノードを削除しますか？\n（子ノードは削除されません）')) {
     return false
   }
 
