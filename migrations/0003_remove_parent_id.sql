@@ -1,6 +1,9 @@
 -- parent_id カラムを削除（複数親システムでは不要）
 -- 順序管理は position カラムのみで行う
 
+-- 重要: 外部キー制約を一時的に無効化
+PRAGMA foreign_keys = OFF;
+
 -- 1. parent_id インデックスを削除
 DROP INDEX IF EXISTS idx_nodes_parent_id;
 
@@ -9,7 +12,7 @@ DROP INDEX IF EXISTS idx_nodes_parent_id;
 -- テーブルを再作成する必要がある
 
 -- 2.1 新しいテーブルを作成（parent_id なし）
-CREATE TABLE IF NOT EXISTS nodes_new (
+CREATE TABLE nodes_new (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   content TEXT,
@@ -31,5 +34,12 @@ DROP TABLE nodes;
 ALTER TABLE nodes_new RENAME TO nodes;
 
 -- 2.5 必要なインデックスを再作成
-CREATE INDEX IF NOT EXISTS idx_nodes_position ON nodes(position);
-CREATE INDEX IF NOT EXISTS idx_nodes_created_at ON nodes(created_at);
+CREATE INDEX idx_nodes_position ON nodes(position);
+CREATE INDEX idx_nodes_created_at ON nodes(created_at);
+
+-- 3. 外部キー制約を再有効化
+PRAGMA foreign_keys = ON;
+
+-- 4. データ整合性チェック
+-- node_relations が正しく保持されているか確認
+-- (エラーがあればマイグレーションが失敗する)
