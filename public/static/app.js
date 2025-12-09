@@ -416,8 +416,8 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
   const showAddChildBtn = treeViewMode === 'normal'
 
   let html = `
-    <div class="tree-node-wrapper">
-      <div data-node-group="${node.id}" class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
+    <div class="tree-node-wrapper" data-node-group="${node.id}">
+      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
            data-node-id="${node.id}"
            data-node-path="${currentPath}">
@@ -527,14 +527,14 @@ function setupDragAndDrop() {
   new Sortable(treeContainer, {
     animation: 150,
     handle: '.drag-handle',
-    draggable: '.tree-node-wrapper',
+    draggable: '[data-node-group]',
     ghostClass: 'dragging',
     group: 'nested',
     fallbackOnBody: true,
     swapThreshold: 0.65,
     onStart: function (evt) {
-      const nodeGroup = evt.item.querySelector('[data-node-group]')
-      const nodeId = parseInt(nodeGroup.dataset.nodeId)
+      const treeItem = evt.item.querySelector('.tree-item')
+      const nodeId = parseInt(treeItem.dataset.nodeId)
       window.currentDraggedNodeId = nodeId
 
       // ノード上へのドロップ検出を有効化
@@ -550,8 +550,8 @@ function setupDragAndDrop() {
         return
       }
 
-      const nodeGroup = evt.item.querySelector('[data-node-group]')
-      const nodeId = parseInt(nodeGroup.dataset.nodeId)
+      const treeItem = evt.item.querySelector('.tree-item')
+      const nodeId = parseInt(treeItem.dataset.nodeId)
       const newIndex = evt.newIndex
 
       window.currentDraggedNodeId = null
@@ -566,14 +566,14 @@ function setupDragAndDrop() {
     new Sortable(container, {
       animation: 150,
       handle: '.drag-handle',
-      draggable: '.tree-node-wrapper',
+      draggable: '[data-node-group]',
       ghostClass: 'dragging',
       group: 'nested',
       fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: function (evt) {
-        const nodeGroup = evt.item.querySelector('[data-node-group]')
-        const nodeId = parseInt(nodeGroup.dataset.nodeId)
+        const treeItem = evt.item.querySelector('.tree-item')
+        const nodeId = parseInt(treeItem.dataset.nodeId)
         window.currentDraggedNodeId = nodeId
 
         // ノード上へのドロップ検出を有効化
@@ -589,8 +589,8 @@ function setupDragAndDrop() {
           return
         }
 
-        const nodeGroup = evt.item.querySelector('[data-node-group]')
-        const nodeId = parseInt(nodeGroup.dataset.nodeId)
+        const treeItem = evt.item.querySelector('.tree-item')
+        const nodeId = parseInt(treeItem.dataset.nodeId)
         const newIndex = evt.newIndex
         const newParentId = evt.to.dataset.parent ? parseInt(evt.to.dataset.parent) : null
 
@@ -680,12 +680,11 @@ function toggleNode(nodeId, clickedElement = null) {
   const treeItem = toggleIcon.closest('.tree-item')
   if (!treeItem) return
   
-  const nodeGroup = treeItem.closest('[data-node-group]')
-  if (!nodeGroup) return
+  const wrapper = treeItem.closest('[data-node-group]')
+  if (!wrapper) return
   
-  // tree-childrenはnodeGroupの兄弟要素になっている
-  const wrapper = nodeGroup.parentElement
-  const childrenContainer = wrapper ? wrapper.querySelector(':scope > .tree-children') : null
+  // tree-childrenはwrapperの直接の子要素
+  const childrenContainer = wrapper.querySelector(':scope > .tree-children')
   if (!childrenContainer) return
   
   // 展開/折りたたみの切り替え
@@ -1406,11 +1405,9 @@ function handleArrowKeys(e) {
           expandedNodes.add(nodeIdToExpand)
           
           // DOM操作のみで展開（renderTreeを呼ばない）
-          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
-          if (nodeGroup) {
-            // tree-childrenはnodeGroupの兄弟要素
-            const wrapper = nodeGroup.parentElement
-            const childrenContainer = wrapper ? wrapper.querySelector(':scope > .tree-children') : null
+          const wrapper = selectedNodeElement.closest('[data-node-group]')
+          if (wrapper) {
+            const childrenContainer = wrapper.querySelector(':scope > .tree-children')
             if (childrenContainer) {
               childrenContainer.classList.add('expanded')
               // 展開アイコンも更新
@@ -1433,11 +1430,9 @@ function handleArrowKeys(e) {
           // 展開されている場合は折りたたむ（DOM操作のみ）
           expandedNodes.delete(nodeIdToCollapse)
           
-          const nodeGroup = selectedNodeElement.closest('[data-node-group]')
-          if (nodeGroup) {
-            // tree-childrenはnodeGroupの兄弟要素
-            const wrapper = nodeGroup.parentElement
-            const childrenContainer = wrapper ? wrapper.querySelector(':scope > .tree-children') : null
+          const wrapper = selectedNodeElement.closest('[data-node-group]')
+          if (wrapper) {
+            const childrenContainer = wrapper.querySelector(':scope > .tree-children')
             if (childrenContainer) {
               childrenContainer.classList.remove('expanded')
               // 折りたたみアイコンも更新
