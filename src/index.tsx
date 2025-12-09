@@ -22,7 +22,7 @@ app.use('/static/*', serveStatic({ root: './public' }))
 app.get('/api/nodes', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM nodes ORDER BY position, created_at'
+      'SELECT * FROM nodes ORDER BY created_at'
     ).all()
     return c.json({ success: true, data: results })
   } catch (error) {
@@ -154,13 +154,12 @@ app.put('/api/nodes/:id', async (c) => {
     // 更新
     await c.env.DB.prepare(
       `UPDATE nodes 
-       SET title = ?, content = ?, author = ?, position = ?, updated_at = CURRENT_TIMESTAMP
+       SET title = ?, content = ?, author = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`
     ).bind(
       title !== undefined ? title : existing.title,
       content !== undefined ? content : existing.content,
       author !== undefined ? author : existing.author,
-      position !== undefined ? position : existing.position,
       id
     ).run()
     
