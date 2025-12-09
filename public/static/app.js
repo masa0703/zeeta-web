@@ -1240,16 +1240,22 @@ async function addRootNode() {
   const author = prompt('作成者名を入力してください:', 'Admin')
   if (!author || !author.trim()) return
 
-  const node = await createNode({
-    title: title.trim(),
-    content: '',
-    author: author.trim(),
-    position: 0
-  })
+  showLoading()
+  try {
+    const node = await createNode({
+      title: title.trim(),
+      content: '',
+      author: author.trim(),
+      position: 0
+    })
 
-  if (node) {
-    expandedNodes.add(node.id)
-    await selectNode(node.id)
+    if (node) {
+      showToast('ノードを追加しました', 'success')
+      expandedNodes.add(node.id)
+      await selectNode(node.id)
+    }
+  } finally {
+    hideLoading()
   }
 }
 
@@ -1260,19 +1266,25 @@ async function addChildNode(parentId) {
   const author = prompt('作成者名を入力してください:', 'Admin')
   if (!author || !author.trim()) return
 
-  // ノード作成
-  const node = await createNode({
-    title: title.trim(),
-    content: '',
-    author: author.trim(),
-    position: 0
-  })
+  showLoading()
+  try {
+    // ノード作成
+    const node = await createNode({
+      title: title.trim(),
+      content: '',
+      author: author.trim(),
+      position: 0
+    })
 
-  if (node) {
-    // 親子関係を追加
-    await addRelation(parentId, node.id)
-    expandedNodes.add(parentId)
-    await selectNode(node.id)
+    if (node) {
+      // 親子関係を追加
+      await addRelation(parentId, node.id)
+      showToast('ノードを追加しました', 'success')
+      expandedNodes.add(parentId)
+      await selectNode(node.id)
+    }
+  } finally {
+    hideLoading()
   }
 }
 
