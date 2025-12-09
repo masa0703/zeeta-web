@@ -642,6 +642,92 @@ app.get('/', (c) => {
           .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
           .tree-view-tab { cursor: pointer; transition: all 0.2s; }
           .tree-view-tab.active { border-bottom-color: #3b82f6 !important; color: #3b82f6; background-color: #eff6ff; }
+          
+          /* ローディングオーバーレイ */
+          #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+          }
+          .loading-spinner {
+            text-align: center;
+            color: white;
+          }
+          .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+          }
+          
+          /* トースト通知 */
+          .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            min-width: 300px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-out;
+          }
+          .toast.show {
+            transform: translateX(0);
+          }
+          .toast-success {
+            border-left: 4px solid #10b981;
+          }
+          .toast-error {
+            border-left: 4px solid #ef4444;
+          }
+          .toast-message {
+            flex: 1;
+            font-size: 14px;
+            color: #1f2937;
+          }
+          .toast-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+          }
+          .toast-close:hover {
+            background: #f3f4f6;
+            color: #4b5563;
+          }
         </style>
     </head>
     <body class="bg-gray-50">

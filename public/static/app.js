@@ -13,6 +13,54 @@ let clipboard = null // コピーしたノードのID
 let treeViewMode = 'normal' // 'normal' or 'reverse'
 
 // ===============================
+// ユーティリティ関数
+// ===============================
+
+// ローディングオーバーレイの表示/非表示
+function showLoading() {
+  let overlay = document.getElementById('loading-overlay')
+  if (!overlay) {
+    overlay = document.createElement('div')
+    overlay.id = 'loading-overlay'
+    overlay.innerHTML = `
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">処理中...</div>
+      </div>
+    `
+    document.body.appendChild(overlay)
+  }
+  overlay.style.display = 'flex'
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loading-overlay')
+  if (overlay) {
+    overlay.style.display = 'none'
+  }
+}
+
+// トースト通知の表示
+function showToast(message, type = 'success', duration = 5000) {
+  const toast = document.createElement('div')
+  toast.className = `toast toast-${type}`
+  toast.innerHTML = `
+    <span class="toast-message">${message}</span>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `
+  document.body.appendChild(toast)
+  
+  // アニメーション用にちょっと遅延
+  setTimeout(() => toast.classList.add('show'), 10)
+  
+  // 自動削除
+  setTimeout(() => {
+    toast.classList.remove('show')
+    setTimeout(() => toast.remove(), 300)
+  }, duration)
+}
+
+// ===============================
 // API呼び出し
 // ===============================
 async function fetchVersion() {
@@ -43,7 +91,7 @@ async function fetchNodes() {
     }
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
-    alert('ノードの取得に失敗しました')
+    showToast('ノードの取得に失敗しました', 'error')
   }
 }
 
@@ -61,11 +109,11 @@ async function addRelation(parentId, childId) {
   } catch (error) {
     console.error('Failed to add relation:', error)
     if (error.response?.data?.error === 'Circular reference detected') {
-      alert('循環参照です。この操作はできません。')
+      showToast('循環参照です。この操作はできません。', 'error')
     } else if (error.response?.data?.error === 'Relation already exists') {
-      alert('この親子関係はすでに存在します')
+      showToast('この親子関係はすでに存在します', 'error')
     } else {
-      alert('親子関係の追加に失敗しました')
+      showToast('親子関係の追加に失敗しました', 'error')
     }
     return false
   }
@@ -80,7 +128,7 @@ async function removeRelation(parentId, childId) {
     }
   } catch (error) {
     console.error('Failed to remove relation:', error)
-    alert('親子関係の削除に失敗しました')
+    showToast('親子関係の削除に失敗しました', 'error')
     return false
   }
 }
@@ -106,7 +154,7 @@ async function createNode(nodeData) {
     }
   } catch (error) {
     console.error('Failed to create node:', error)
-    alert('ノードの作成に失敗しました')
+    showToast('ノードの作成に失敗しました', 'error')
     return null
   }
 }
@@ -120,7 +168,7 @@ async function updateNode(id, nodeData) {
     }
   } catch (error) {
     console.error('Failed to update node:', error)
-    alert('ノードの更新に失敗しました')
+    showToast('ノードの更新に失敗しました', 'error')
     return null
   }
 }
@@ -142,7 +190,7 @@ async function deleteNode(id) {
     }
   } catch (error) {
     console.error('Failed to delete node:', error)
-    alert('ノードの削除に失敗しました')
+    showToast('ノードの削除に失敗しました', 'error')
     return false
   }
 }
@@ -160,9 +208,9 @@ async function moveNode(nodeId, newParentId, newPosition) {
   } catch (error) {
     console.error('Failed to move node:', error)
     if (error.response?.data?.error === 'Circular reference detected') {
-      alert('循環参照は許可されていません')
+      showToast('循環参照は許可されていません', 'error')
     } else {
-      alert('ノードの移動に失敗しました')
+      showToast('ノードの移動に失敗しました', 'error')
     }
     return false
   }
@@ -170,6 +218,7 @@ async function moveNode(nodeId, newParentId, newPosition) {
 
 // 同じ階層の全ノードの position を一括更新
 async function reorderNodes(container) {
+  showLoading()
   try {
     // コンテナ内の全ノードを取得（DOM順）
     const nodeElements = container.querySelectorAll(':scope > [data-node-group]')
@@ -213,7 +262,10 @@ async function reorderNodes(container) {
     return true
   } catch (error) {
     console.error('Failed to reorder nodes:', error)
+    showToast('並び替えに失敗しました', 'error')
     return false
+  } finally {
+    hideLoading()
   }
 }
 
@@ -1147,19 +1199,24 @@ async function saveCurrentNode() {
   const author = document.getElementById('node-author').value.trim()
 
   if (!title) {
-    alert('タイトルを入力してください')
+    showToast('タイトルを入力してください', 'error')
     return
   }
 
   if (!author) {
-    alert('作成者を入力してください')
+    showToast('作成者を入力してください', 'error')
     return
   }
 
-  const updated = await updateNode(selectedNodeId, { title, content, author })
-  if (updated) {
-    alert('保存しました')
-    await selectNode(selectedNodeId) // リロード
+  showLoading()
+  try {
+    const updated = await updateNode(selectedNodeId, { title, content, author })
+    if (updated) {
+      showToast('保存しました', 'success')
+      await selectNode(selectedNodeId) // リロード
+    }
+  } finally {
+    hideLoading()
   }
 }
 
