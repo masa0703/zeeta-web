@@ -166,12 +166,8 @@ async function reorderNodes(container) {
       const treeItem = element.querySelector('.tree-item')
       const nodeId = parseInt(treeItem.dataset.nodeId)
       
-      // parent_id を取得（ルートの場合は null、子要素の場合は親のID）
-      const parentId = container.dataset.parent ? parseInt(container.dataset.parent) : null
-      
       updates.push(
-        axios.patch(`/api/nodes/${nodeId}/parent`, {
-          parent_id: parentId,
+        axios.patch(`/api/nodes/${nodeId}/position`, {
           position: index
         })
       )
@@ -262,11 +258,13 @@ function clearSearch() {
 }
 
 function expandParents(nodeId) {
-  const node = nodes.find(n => n.id === nodeId)
-  if (node && node.parent_id) {
-    expandedNodes.add(node.parent_id)
-    expandParents(node.parent_id)
-  }
+  // node_relations から親ノードを取得
+  const parentRelations = relations.filter(rel => rel.child_node_id === nodeId)
+  
+  parentRelations.forEach(rel => {
+    expandedNodes.add(rel.parent_node_id)
+    expandParents(rel.parent_node_id)  // 再帰的に親の親も展開
+  })
 }
 
 function highlightText(text, query) {
@@ -687,11 +685,16 @@ function disableNodeDropZones() {
 }
 
 function isDescendant(ancestorId, nodeId) {
-  const node = nodes.find(n => n.id === nodeId)
-  if (!node) return false
-  if (node.parent_id === ancestorId) return true
-  if (node.parent_id === null) return false
-  return isDescendant(ancestorId, node.parent_id)
+  // node_relations を使って子孫かどうかをチェック
+  const childRelations = relations.filter(rel => rel.parent_node_id === ancestorId)
+  
+  for (const rel of childRelations) {
+    if (rel.child_node_id === nodeId) return true
+    // 再帰的にチェック
+    if (isDescendant(rel.child_node_id, nodeId)) return true
+  }
+  
+  return false
 }
 
 function toggleNode(nodeId, clickedElement = null) {
@@ -1136,7 +1139,6 @@ async function addRootNode() {
   if (!author || !author.trim()) return
 
   const node = await createNode({
-    parent_id: null,
     title: title.trim(),
     content: '',
     author: author.trim(),
@@ -1156,9 +1158,8 @@ async function addChildNode(parentId) {
   const author = prompt('作成者名を入力してください:', 'Admin')
   if (!author || !author.trim()) return
 
-  // ノード作成（parent_idなし）
+  // ノード作成
   const node = await createNode({
-    parent_id: null,
     title: title.trim(),
     content: '',
     author: author.trim(),

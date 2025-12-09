@@ -114,17 +114,16 @@ app.get('/api/relations', async (c) => {
 app.post('/api/nodes', async (c) => {
   try {
     const body = await c.req.json()
-    const { parent_id, title, content, author, position } = body
+    const { title, content, author, position } = body
     
     if (!title || !author) {
       return c.json({ success: false, error: 'Title and author are required' }, 400)
     }
     
     const result = await c.env.DB.prepare(
-      `INSERT INTO nodes (parent_id, title, content, author, position) 
-       VALUES (?, ?, ?, ?, ?) RETURNING *`
+      `INSERT INTO nodes (title, content, author, position) 
+       VALUES (?, ?, ?, ?) RETURNING *`
     ).bind(
-      parent_id || null,
       title,
       content || '',
       author,
@@ -292,29 +291,34 @@ async function getAncestors(db: D1Database, nodeId: number): Promise<number[]> {
 }
 
 // ノードの親変更
+// ノードのposition更新（ドラッグ&ドロップ用）
+app.patch('/api/nodes/:id/position', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    const { position } = body
+    
+    await c.env.DB.prepare(
+      'UPDATE nodes SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(position || 0, id).run()
+    
+    const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ?').bind(id).first()
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 後方互換性のため /api/nodes/:id/parent も残す（同じ処理）
 app.patch('/api/nodes/:id/parent', async (c) => {
   try {
     const id = c.req.param('id')
     const body = await c.req.json()
-    const { parent_id, position } = body
-    
-    // 循環参照チェック（自分自身または自分の子孫を親にできない）
-    if (parent_id) {
-      const checkCircular = async (nodeId: string, targetId: string): Promise<boolean> => {
-        if (nodeId === targetId) return true
-        const node = await c.env.DB.prepare('SELECT parent_id FROM nodes WHERE id = ?').bind(nodeId).first()
-        if (!node || !node.parent_id) return false
-        return checkCircular(String(node.parent_id), targetId)
-      }
-      
-      if (await checkCircular(parent_id, id)) {
-        return c.json({ success: false, error: 'Circular reference detected' }, 400)
-      }
-    }
+    const { position } = body
     
     await c.env.DB.prepare(
-      'UPDATE nodes SET parent_id = ?, position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(parent_id || null, position || 0, id).run()
+      'UPDATE nodes SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(position || 0, id).run()
     
     const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ?').bind(id).first()
     return c.json({ success: true, data: updated })
