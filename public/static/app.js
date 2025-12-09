@@ -15,6 +15,20 @@ let treeViewMode = 'normal' // 'normal' or 'reverse'
 // ===============================
 // API呼び出し
 // ===============================
+async function fetchVersion() {
+  try {
+    const res = await axios.get('/api/version')
+    if (res.data.success) {
+      const versionBadge = document.getElementById('version-badge')
+      if (versionBadge) {
+        versionBadge.textContent = res.data.data.version
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch version:', error)
+  }
+}
+
 async function fetchNodes() {
   try {
     const [nodesRes, relationsRes] = await Promise.all([
@@ -1551,5 +1565,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', handleArrowKeys)
 
   // 初期データ読み込み
+  fetchVersion()
   fetchNodes()
 })

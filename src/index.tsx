@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
+// ビルド番号のグローバル型定義
+declare const __BUILD_NUMBER__: string
+
 type Bindings = {
   DB: D1Database
 }
@@ -17,6 +20,17 @@ app.use('/static/*', serveStatic({ root: './public' }))
 // ===============================
 // API Routes
 // ===============================
+
+// バージョン情報取得
+app.get('/api/version', (c) => {
+  return c.json({ 
+    success: true, 
+    data: { 
+      buildNumber: __BUILD_NUMBER__,
+      version: `build #${__BUILD_NUMBER__}`
+    } 
+  })
+})
 
 // 全ノード取得
 app.get('/api/nodes', async (c) => {
@@ -637,9 +651,12 @@ app.get('/', (c) => {
                 <!-- 固定ヘッダー部分 -->
                 <div class="p-4 flex-shrink-0">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold text-gray-800">
-                            <i class="fas fa-sitemap mr-2"></i>
-                            Zeeta Web
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Zeeta Web</span>
+                            <span id="version-badge" class="text-xs font-normal text-gray-500 px-2 py-1 bg-gray-100 rounded">
+                                loading...
+                            </span>
                         </h2>
                         <button id="add-root-btn" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
                             <i class="fas fa-plus mr-1"></i>ルート追加
