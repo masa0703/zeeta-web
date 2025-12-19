@@ -61,7 +61,7 @@ REST APIの詳細仕様は [api-specification.md](./api-specification.md) を参
 
 ## フロントエンド構造
 
-UI画面の詳細仕様は [ui-specification.md](./ui-specification.md) を参照してください。
+UI画面の詳細仕様は [screen-definition.md](./screen-definition.md) を参照してください。
 
 **主要コンポーネント**:
 - **左ペイン（ツリー表示部）**: 階層構造の表示、ドラッグ&ドロップ操作
@@ -123,7 +123,7 @@ UI画面の詳細仕様は [ui-specification.md](./ui-specification.md) を参�
 
 ## UI・操作仕様
 
-キーボードショートカット、画面レイアウト、インタラクションなどの詳細は [ui-specification.md](./ui-specification.md) を参照してください。
+キーボードショートカット、画面レイアウト、インタラクションなどの詳細は [screen-definition.md](./screen-definition.md) を参照してください。
 
 ## テスト
 
