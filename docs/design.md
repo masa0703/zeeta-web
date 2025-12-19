@@ -53,23 +53,23 @@
 
 ### エンドポイント一覧
 
-| メソッド | パス | 説明 |
-|---------|------|------|
-| GET | `/api/version` | バージョン情報取得 |
-| GET | `/api/nodes` | 全ノード取得 |
-| GET | `/api/nodes/:id` | 特定ノード取得 |
-| GET | `/api/nodes/:id/children` | 子ノード取得 |
-| GET | `/api/nodes/:id/parents` | 親ノード取得 |
-| GET | `/api/nodes/root/list` | ルートノード取得 |
-| GET | `/api/relations` | 全リレーション取得 |
-| POST | `/api/nodes` | ノード作成 |
-| PUT | `/api/nodes/:id` | ノード更新 |
-| DELETE | `/api/nodes/:id` | ノード削除 |
-| POST | `/api/relations` | 親子関係追加 |
-| DELETE | `/api/relations/:parent_id/:child_id` | 親子関係削除 |
-| PATCH | `/api/relations/:parent_id/:child_id/position` | リレーション位置更新 |
-| PATCH | `/api/nodes/:id/root-position` | ルート位置更新 |
-| GET | `/api/search?q=検索語` | 検索 |
+| メソッド | パス                                           | 説明                 |
+| -------- | ---------------------------------------------- | -------------------- |
+| GET      | `/api/version`                                 | バージョン情報取得   |
+| GET      | `/api/nodes`                                   | 全ノード取得         |
+| GET      | `/api/nodes/:id`                               | 特定ノード取得       |
+| GET      | `/api/nodes/:id/children`                      | 子ノード取得         |
+| GET      | `/api/nodes/:id/parents`                       | 親ノード取得         |
+| GET      | `/api/nodes/root/list`                         | ルートノード取得     |
+| GET      | `/api/relations`                               | 全リレーション取得   |
+| POST     | `/api/nodes`                                   | ノード作成           |
+| PUT      | `/api/nodes/:id`                               | ノード更新           |
+| DELETE   | `/api/nodes/:id`                               | ノード削除           |
+| POST     | `/api/relations`                               | 親子関係追加         |
+| DELETE   | `/api/relations/:parent_id/:child_id`          | 親子関係削除         |
+| PATCH    | `/api/relations/:parent_id/:child_id/position` | リレーション位置更新 |
+| PATCH    | `/api/nodes/:id/root-position`                 | ルート位置更新       |
+| GET      | `/api/search?q=検索語`                         | 検索                 |
 
 ### 主要API詳細
 

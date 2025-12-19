@@ -44,20 +44,20 @@ function hideLoading() {
 function showToast(message, type = 'success', duration = 5000) {
   const toast = document.createElement('div')
   toast.className = `toast toast-${type}`
-  
+
   // アイコンを決定
   const icon = type === 'success' ? '✓' : '⚠'
-  
+
   toast.innerHTML = `
     <div class="toast-icon">${icon}</div>
     <span class="toast-message">${message}</span>
     <button class="toast-close" onclick="this.parentElement.remove()">×</button>
   `
   document.body.appendChild(toast)
-  
+
   // アニメーション用にちょっと遅延
   setTimeout(() => toast.classList.add('show'), 10)
-  
+
   // 自動削除
   setTimeout(() => {
     toast.classList.remove('show')
@@ -228,7 +228,7 @@ async function reorderNodes(container) {
   try {
     // コンテナ内の全ノードを取得（DOM順）
     const nodeElements = container.querySelectorAll(':scope > [data-node-group]')
-    
+
     // 親ノードIDを特定
     let parentId = null
     if (container.id === 'tree-container') {
@@ -238,13 +238,13 @@ async function reorderNodes(container) {
       // 子レベル: data-parent属性から親IDを取得
       parentId = parseInt(container.dataset.parent)
     }
-    
+
     // 各ノードの position を順番に更新
     const updates = []
     nodeElements.forEach((element, index) => {
       const treeItem = element.querySelector('.tree-item')
       const nodeId = parseInt(treeItem.dataset.nodeId)
-      
+
       if (parentId !== null) {
         // 親子関係のposition更新
         updates.push(
@@ -261,7 +261,7 @@ async function reorderNodes(container) {
         )
       }
     })
-    
+
     // 全ての更新を並列実行
     await Promise.all(updates)
     await fetchNodes()
@@ -352,7 +352,7 @@ function clearSearch() {
 function expandParents(nodeId) {
   // node_relations から親ノードを取得
   const parentRelations = relations.filter(rel => rel.child_node_id === nodeId)
-  
+
   parentRelations.forEach(rel => {
     expandedNodes.add(rel.parent_node_id)
     expandParents(rel.parent_node_id)  // 再帰的に親の親も展開
@@ -676,7 +676,7 @@ function setupDragAndDrop() {
       }
 
       window.currentDraggedNodeId = null
-      
+
       // コンテナ内の全ノードの順序を更新
       await reorderNodes(evt.to)
     }
@@ -713,7 +713,7 @@ function setupDragAndDrop() {
         }
 
         window.currentDraggedNodeId = null
-        
+
         // コンテナ内の全ノードの順序を更新
         await reorderNodes(evt.to)
       }
@@ -781,37 +781,37 @@ function disableNodeDropZones() {
 function isDescendant(ancestorId, nodeId) {
   // node_relations を使って子孫かどうかをチェック
   const childRelations = relations.filter(rel => rel.parent_node_id === ancestorId)
-  
+
   for (const rel of childRelations) {
     if (rel.child_node_id === nodeId) return true
     // 再帰的にチェック
     if (isDescendant(rel.child_node_id, nodeId)) return true
   }
-  
+
   return false
 }
 
 function toggleNode(nodeId, clickedElement = null) {
   // クリックされた要素が渡された場合はそれを使用、なければquerySelectorで探す
   let toggleIcon = clickedElement
-  
+
   if (!toggleIcon) {
     // フォールバック: IDで最初に見つかった要素を使用
     toggleIcon = document.querySelector(`.toggle-icon[data-node-id="${nodeId}"]`)
   }
-  
+
   if (!toggleIcon) return
-  
+
   const treeItem = toggleIcon.closest('.tree-item')
   if (!treeItem) return
-  
+
   const wrapper = treeItem.closest('[data-node-group]')
   if (!wrapper) return
-  
+
   // tree-childrenはwrapperの直接の子要素
   const childrenContainer = wrapper.querySelector(':scope > .tree-children')
   if (!childrenContainer) return
-  
+
   // 展開/折りたたみの切り替え
   if (expandedNodes.has(nodeId)) {
     // 折りたたみ
@@ -826,7 +826,7 @@ function toggleNode(nodeId, clickedElement = null) {
     toggleIcon.classList.remove('fa-chevron-right')
     toggleIcon.classList.add('fa-chevron-down')
   }
-  
+
   // DOM操作のみ、renderTree()は呼ばない
 }
 
@@ -1161,7 +1161,7 @@ function renderEditor(node = null, parents = []) {
     window.currentEditor.toTextArea() // 既存のエディタを破棄
     window.currentEditor = null
   }
-  
+
   window.currentEditor = new EasyMDE({
     element: document.getElementById('node-content'),
     spellChecker: false,
@@ -1181,7 +1181,7 @@ function renderEditor(node = null, parents = []) {
       singleLineBreaks: false,
       codeSyntaxHighlighting: false,
     },
-    previewRender: function(plainText) {
+    previewRender: function (plainText) {
       // marked.jsを使ってMarkdownをレンダリング
       if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
         // 単一改行も<br>に変換（GitHub Flavored Markdown互換）
@@ -1530,16 +1530,16 @@ function handleArrowKeys(e) {
       if (selectedNodeElement) {
         // 選択中のノードのIDを取得
         const nodeIdToExpand = parseInt(selectedNodeElement.dataset.nodeId)
-        
+
         // 逆ツリーモードと通常モードで子ノードの判定方法が異なる
         const hasChildren = treeViewMode === 'reverse'
           ? relations.some(rel => rel.child_node_id === nodeIdToExpand)
           : relations.some(rel => rel.parent_node_id === nodeIdToExpand)
-        
+
         if (hasChildren && !expandedNodes.has(nodeIdToExpand)) {
           // 展開状態を更新
           expandedNodes.add(nodeIdToExpand)
-          
+
           // DOM操作のみで展開（renderTreeを呼ばない）
           const wrapper = selectedNodeElement.closest('[data-node-group]')
           if (wrapper) {
@@ -1561,11 +1561,11 @@ function handleArrowKeys(e) {
     case 'ArrowLeft':
       if (selectedNodeElement) {
         const nodeIdToCollapse = parseInt(selectedNodeElement.dataset.nodeId)
-        
+
         if (expandedNodes.has(nodeIdToCollapse)) {
           // 展開されている場合は折りたたむ（DOM操作のみ）
           expandedNodes.delete(nodeIdToCollapse)
-          
+
           const wrapper = selectedNodeElement.closest('[data-node-group]')
           if (wrapper) {
             const childrenContainer = wrapper.querySelector(':scope > .tree-children')
