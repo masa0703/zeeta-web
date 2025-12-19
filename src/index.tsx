@@ -514,12 +514,12 @@ app.use('/api/search', authMiddleware)
 
 // バージョン情報取得
 app.get('/api/version', (c) => {
-  return c.json({ 
-    success: true, 
-    data: { 
+  return c.json({
+    success: true,
+    data: {
       buildNumber: __BUILD_NUMBER__,
       version: `build #${__BUILD_NUMBER__}`
-    } 
+    }
   })
 })
 
@@ -527,7 +527,7 @@ app.get('/api/version', (c) => {
 app.get('/api/nodes', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM nodes ORDER BY created_at'
+      'SELECT * FROM nodes ORDER BY root_position, created_at'
     ).all()
     return c.json({ success: true, data: results })
   } catch (error) {
@@ -542,11 +542,11 @@ app.get('/api/nodes/:id', async (c) => {
     const { results } = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE id = ?'
     ).bind(id).all()
-    
+
     if (results.length === 0) {
       return c.json({ success: false, error: 'Node not found' }, 404)
     }
-    
+
     return c.json({ success: true, data: results[0] })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -563,7 +563,7 @@ app.get('/api/nodes/:id/children', async (c) => {
        WHERE nr.parent_node_id = ?
        ORDER BY nr.position, n.created_at`
     ).bind(id).all()
-    
+
     return c.json({ success: true, data: results })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -580,7 +580,7 @@ app.get('/api/nodes/:id/parents', async (c) => {
        WHERE nr.child_node_id = ?
        ORDER BY n.created_at`
     ).bind(id).all()
-    
+
     return c.json({ success: true, data: results })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -595,7 +595,7 @@ app.get('/api/nodes/root/list', async (c) => {
        WHERE id NOT IN (SELECT child_node_id FROM node_relations)
        ORDER BY root_position, created_at`
     ).all()
-    
+
     return c.json({ success: true, data: results })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -608,7 +608,7 @@ app.get('/api/relations', async (c) => {
     const { results } = await c.env.DB.prepare(
       'SELECT * FROM node_relations ORDER BY parent_node_id, position'
     ).all()
-    
+
     return c.json({ success: true, data: results })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -620,11 +620,11 @@ app.post('/api/nodes', async (c) => {
   try {
     const body = await c.req.json()
     const { title, content, author, root_position } = body
-    
+
     if (!title || !author) {
       return c.json({ success: false, error: 'Title and author are required' }, 400)
     }
-    
+
     // root_positionが指定されていない場合、最大値+1を使用
     let finalRootPosition = root_position
     if (finalRootPosition === undefined) {
@@ -633,7 +633,7 @@ app.post('/api/nodes', async (c) => {
       ).first()
       finalRootPosition = (maxPosResult?.max_pos as number) + 1
     }
-    
+
     const result = await c.env.DB.prepare(
       `INSERT INTO nodes (title, content, author, root_position) 
        VALUES (?, ?, ?, ?) RETURNING *`
@@ -643,7 +643,7 @@ app.post('/api/nodes', async (c) => {
       author,
       finalRootPosition
     ).first()
-    
+
     return c.json({ success: true, data: result }, 201)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -656,16 +656,16 @@ app.put('/api/nodes/:id', async (c) => {
     const id = c.req.param('id')
     const body = await c.req.json()
     const { title, content, author } = body
-    
+
     // 現在のノード情報を取得
     const existing = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE id = ?'
     ).bind(id).first()
-    
+
     if (!existing) {
       return c.json({ success: false, error: 'Node not found' }, 404)
     }
-    
+
     // 更新
     await c.env.DB.prepare(
       `UPDATE nodes 
@@ -677,12 +677,12 @@ app.put('/api/nodes/:id', async (c) => {
       author !== undefined ? author : existing.author,
       id
     ).run()
-    
+
     // 更新後のデータを取得
     const updated = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE id = ?'
     ).bind(id).first()
-    
+
     return c.json({ success: true, data: updated })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -693,15 +693,15 @@ app.put('/api/nodes/:id', async (c) => {
 app.delete('/api/nodes/:id', async (c) => {
   try {
     const id = c.req.param('id')
-    
+
     const result = await c.env.DB.prepare(
       'DELETE FROM nodes WHERE id = ?'
     ).bind(id).run()
-    
+
     if (result.meta.changes === 0) {
       return c.json({ success: false, error: 'Node not found' }, 404)
     }
-    
+
     return c.json({ success: true, message: 'Node deleted' })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -713,43 +713,43 @@ app.post('/api/relations', async (c) => {
   try {
     const body = await c.req.json()
     const { parent_node_id, child_node_id } = body
-    
+
     if (!parent_node_id || !child_node_id) {
       return c.json({ success: false, error: 'parent_node_id and child_node_id are required' }, 400)
     }
-    
+
     // 同じノード同士はNG
     if (parent_node_id === child_node_id) {
       return c.json({ success: false, error: 'Cannot create self-reference' }, 400)
     }
-    
+
     // 循環参照チェック
     const hasCircular = await checkCircularReference(c.env.DB, parent_node_id, child_node_id)
     if (hasCircular) {
       return c.json({ success: false, error: 'Circular reference detected' }, 400)
     }
-    
+
     // 既存のリレーションチェック
     const existing = await c.env.DB.prepare(
       'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(parent_node_id, child_node_id).first()
-    
+
     if (existing) {
       return c.json({ success: false, error: 'Relation already exists' }, 400)
     }
-    
+
     // 新しいリレーションの位置を計算（親の最後に追加）
     const maxPosResult = await c.env.DB.prepare(
       'SELECT COALESCE(MAX(position), -1) as max_pos FROM node_relations WHERE parent_node_id = ?'
     ).bind(parent_node_id).first()
-    
+
     const newPosition = (maxPosResult?.max_pos as number) + 1
-    
+
     // リレーション追加
     const result = await c.env.DB.prepare(
       'INSERT INTO node_relations (parent_node_id, child_node_id, position) VALUES (?, ?, ?) RETURNING *'
     ).bind(parent_node_id, child_node_id, newPosition).first()
-    
+
     return c.json({ success: true, data: result }, 201)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -761,16 +761,32 @@ app.delete('/api/relations/:parent_id/:child_id', async (c) => {
   try {
     const parentId = c.req.param('parent_id')
     const childId = c.req.param('child_id')
-    
+
     const result = await c.env.DB.prepare(
       'DELETE FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(parentId, childId).run()
-    
+
     if (result.meta.changes === 0) {
       return c.json({ success: false, error: 'Relation not found' }, 404)
     }
-    
+
     return c.json({ success: true, message: 'Relation deleted' })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// テスト用: 全データクリア
+app.delete('/api/test/clear', async (c) => {
+  try {
+    // リレーションを全削除
+    await c.env.DB.prepare('DELETE FROM node_relations').run()
+    // ノードを全削除
+    await c.env.DB.prepare('DELETE FROM nodes').run()
+    // auto_incrementをリセット
+    await c.env.DB.prepare('DELETE FROM sqlite_sequence WHERE name IN ("nodes", "node_relations")').run()
+
+    return c.json({ success: true, message: 'All data cleared' })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }
@@ -787,26 +803,26 @@ async function checkCircularReference(db: D1Database, parentId: number, childId:
 async function getAncestors(db: D1Database, nodeId: number): Promise<number[]> {
   const ancestors: number[] = []
   const visited = new Set<number>()
-  
+
   const queue: number[] = [nodeId]
-  
+
   while (queue.length > 0) {
     const currentId = queue.shift()!
-    
+
     if (visited.has(currentId)) continue
     visited.add(currentId)
-    
+
     const { results } = await db.prepare(
       'SELECT parent_node_id FROM node_relations WHERE child_node_id = ?'
     ).bind(currentId).all()
-    
+
     for (const row of results) {
       const parentId = row.parent_node_id as number
       ancestors.push(parentId)
       queue.push(parentId)
     }
   }
-  
+
   return ancestors
 }
 
@@ -817,25 +833,25 @@ app.patch('/api/relations/:parent_id/:child_id/position', async (c) => {
     const childId = c.req.param('child_id')
     const body = await c.req.json()
     const { position } = body
-    
+
     // リレーションの存在確認
     const existing = await c.env.DB.prepare(
       'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(parentId, childId).first()
-    
+
     if (!existing) {
       return c.json({ success: false, error: 'Relation not found' }, 404)
     }
-    
+
     // positionを更新
     await c.env.DB.prepare(
       'UPDATE node_relations SET position = ? WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(position || 0, parentId, childId).run()
-    
+
     const updated = await c.env.DB.prepare(
       'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
     ).bind(parentId, childId).first()
-    
+
     return c.json({ success: true, data: updated })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -848,25 +864,25 @@ app.patch('/api/nodes/:id/root-position', async (c) => {
     const id = c.req.param('id')
     const body = await c.req.json()
     const { root_position } = body
-    
+
     // ノードの存在確認
     const existing = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE id = ?'
     ).bind(id).first()
-    
+
     if (!existing) {
       return c.json({ success: false, error: 'Node not found' }, 404)
     }
-    
+
     // root_positionを更新
     await c.env.DB.prepare(
       'UPDATE nodes SET root_position = ? WHERE id = ?'
     ).bind(root_position || 0, id).run()
-    
+
     const updated = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE id = ?'
     ).bind(id).first()
-    
+
     return c.json({ success: true, data: updated })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -880,12 +896,12 @@ app.get('/api/search', async (c) => {
     if (!query || query.trim() === '') {
       return c.json({ success: true, data: [] })
     }
-    
+
     const searchTerm = `%${query}%`
     const { results } = await c.env.DB.prepare(
       'SELECT * FROM nodes WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC'
     ).bind(searchTerm, searchTerm).all()
-    
+
     return c.json({ success: true, data: results })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -918,6 +934,7 @@ app.get('/', (c) => {
           .tree-item {
             cursor: move;
             user-select: none;
+            line-height: 1.2;
           }
           .tree-item:hover {
             background-color: #f3f4f6;

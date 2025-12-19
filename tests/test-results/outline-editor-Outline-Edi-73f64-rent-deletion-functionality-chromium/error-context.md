@@ -1,0 +1,1220 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - 'heading " Zeeta Web build #72" [level=2] [ref=e6]':
+            - generic [ref=e7]: 
+            - generic [ref=e8]: Zeeta Web
+            - generic [ref=e9]: "build #72"
+          - button " ルート追加" [ref=e10] [cursor=pointer]:
+            - generic [ref=e11]: 
+            - text: ルート追加
+        - generic [ref=e13]:
+          - textbox "検索..." [ref=e14]
+          - generic [ref=e15]: 
+          - text: 
+        - generic [ref=e17]:
+          - button " 通常" [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: 
+            - text: 通常
+          - button " 逆ツリー" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]: 
+            - text: 逆ツリー
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: 
+            - generic [ref=e27]: 
+            - generic [ref=e28]: 
+            - generic [ref=e29]: プロジェクト計画
+            - button "" [ref=e30] [cursor=pointer]:
+              - generic [ref=e31]: 
+          - generic:
+            - generic [ref=e33]:
+              - generic [ref=e34]: 
+              - generic [ref=e35]: 
+              - generic [ref=e36]: 目標
+              - button "" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: 
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: 
+                - generic [ref=e42]: 
+                - generic [ref=e43]: 
+                - generic [ref=e44]: タスクリスト
+                - button "" [ref=e45] [cursor=pointer]:
+                  - generic [ref=e46]: 
+              - generic:
+                - generic [ref=e48]:
+                  - generic [ref=e49]: 
+                  - generic [ref=e50]: 
+                  - generic [ref=e51]: デザイン
+                  - button "" [ref=e52] [cursor=pointer]:
+                    - generic [ref=e53]: 
+                - generic [ref=e55]:
+                  - generic [ref=e56]: 
+                  - generic [ref=e57]: 
+                  - generic [ref=e58]: 実装
+                  - button "" [ref=e59] [cursor=pointer]:
+                    - generic [ref=e60]: 
+        - generic [ref=e62]:
+          - generic [ref=e63]: 
+          - generic [ref=e64]: 
+          - generic [ref=e65]: 更新タイトル
+          - button "" [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]: 
+        - generic [ref=e69]:
+          - generic [ref=e70]: 
+          - generic [ref=e71]: 
+          - generic [ref=e72]: テストノード
+          - button "" [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]: 
+        - generic [ref=e76]:
+          - generic [ref=e77]: 
+          - generic [ref=e78]: 
+          - generic [ref=e79]: ルート1
+          - button "" [ref=e80] [cursor=pointer]:
+            - generic [ref=e81]: 
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: 
+            - generic [ref=e85]: 
+            - generic [ref=e86]: 
+            - generic [ref=e87]: 親ノード
+            - button "" [ref=e88] [cursor=pointer]:
+              - generic [ref=e89]: 
+          - generic:
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - generic [ref=e92]: 
+                - generic [ref=e93]: 
+                - generic [ref=e94]: 
+                - generic [ref=e95]: 親1
+                - button "" [ref=e96] [cursor=pointer]:
+                  - generic [ref=e97]: 
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - generic [ref=e100]: 
+                  - generic [ref=e101]: 
+                  - generic [ref=e102]: 
+                  - generic [ref=e103]: ペースト先
+                  - generic "複数の親を持つノード" [ref=e104]:
+                    - generic [ref=e105]: 
+                    - text: "2"
+                  - button "" [ref=e106] [cursor=pointer]:
+                    - generic [ref=e107]: 
+                - generic [ref=e109]:
+                  - generic [ref=e110]: 
+                  - generic [ref=e111]: 
+                  - generic [ref=e112]: コピー元
+                  - button "" [ref=e113] [cursor=pointer]:
+                    - generic [ref=e114]: 
+            - generic [ref=e116]:
+              - generic [ref=e117]: 
+              - generic [ref=e118]: 
+              - generic [ref=e119]: ノード1
+              - button "" [ref=e120] [cursor=pointer]:
+                - generic [ref=e121]: 
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e124]: 
+                - generic [ref=e125]: 
+                - generic [ref=e126]: 
+                - generic [ref=e127]: 親A
+                - button "" [ref=e128] [cursor=pointer]:
+                  - generic [ref=e129]: 
+              - generic:
+                - generic [ref=e131]:
+                  - generic [ref=e132]: 
+                  - generic [ref=e133]: 
+                  - generic [ref=e134]: 子X
+                  - generic "複数の親を持つノード" [ref=e135]:
+                    - generic [ref=e136]: 
+                    - text: "2"
+                  - button "" [ref=e137] [cursor=pointer]:
+                    - generic [ref=e138]: 
+                - generic [ref=e139]:
+                  - generic [ref=e140]:
+                    - generic [ref=e141]: 
+                    - generic [ref=e142]: 
+                    - generic [ref=e143]: 
+                    - generic [ref=e144]: ペースト先
+                    - generic "複数の親を持つノード" [ref=e145]:
+                      - generic [ref=e146]: 
+                      - text: "2"
+                    - button "" [ref=e147] [cursor=pointer]:
+                      - generic [ref=e148]: 
+                  - generic [ref=e150]:
+                    - generic [ref=e151]: 
+                    - generic [ref=e152]: 
+                    - generic [ref=e153]: コピー元
+                    - button "" [ref=e154] [cursor=pointer]:
+                      - generic [ref=e155]: 
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - generic [ref=e158]: 
+                    - generic [ref=e159]: 
+                    - generic [ref=e160]: 
+                    - generic [ref=e161]: 親B
+                    - button "" [ref=e162] [cursor=pointer]:
+                      - generic [ref=e163]: 
+                  - generic [ref=e165]:
+                    - generic [ref=e166]: 
+                    - generic [ref=e167]: 
+                    - generic [ref=e168]: 子X
+                    - generic "複数の親を持つノード" [ref=e169]:
+                      - generic [ref=e170]: 
+                      - text: "2"
+                    - button "" [ref=e171] [cursor=pointer]:
+                      - generic [ref=e172]: 
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - generic [ref=e175]: 
+            - generic [ref=e176]: 
+            - generic [ref=e177]: 
+            - generic [ref=e178]: 検索テストノード
+            - button "" [ref=e179] [cursor=pointer]:
+              - generic [ref=e180]: 
+          - generic:
+            - generic [ref=e181]:
+              - generic [ref=e182]:
+                - generic [ref=e183]: 
+                - generic [ref=e184]: 
+                - generic [ref=e185]: 
+                - generic [ref=e186]: 親2
+                - button "" [ref=e187] [cursor=pointer]:
+                  - generic [ref=e188]: 
+              - generic:
+                - generic [ref=e190]:
+                  - generic [ref=e191]: 
+                  - generic [ref=e192]: 
+                  - generic [ref=e193]: 親A
+                  - button "" [ref=e194] [cursor=pointer]:
+                    - generic [ref=e195]: 
+                - generic [ref=e197]:
+                  - generic [ref=e198]: 
+                  - generic [ref=e199]: 
+                  - generic [ref=e200]: 子X
+                  - button "" [ref=e201] [cursor=pointer]:
+                    - generic [ref=e202]: 
+                - generic [ref=e204]:
+                  - generic [ref=e205]: 
+                  - generic [ref=e206]: 
+                  - generic [ref=e207]: ノード2
+                  - generic "複数の親を持つノード" [ref=e208]:
+                    - generic [ref=e209]: 
+                    - text: "2"
+                  - button "" [ref=e210] [cursor=pointer]:
+                    - generic [ref=e211]: 
+            - generic [ref=e213]:
+              - generic [ref=e214]: 
+              - generic [ref=e215]: 
+              - generic [ref=e216]: ノード2
+              - generic "複数の親を持つノード" [ref=e217]:
+                - generic [ref=e218]: 
+                - text: "2"
+              - button "" [ref=e219] [cursor=pointer]:
+                - generic [ref=e220]: 
+        - generic [ref=e221]:
+          - generic [ref=e222]:
+            - generic [ref=e223]: 
+            - generic [ref=e224]: 
+            - generic [ref=e225]: 
+            - generic [ref=e226]: 子
+            - button "" [ref=e227] [cursor=pointer]:
+              - generic [ref=e228]: 
+          - generic [ref=e230]:
+            - generic [ref=e231]: 
+            - generic [ref=e232]: 
+            - generic [ref=e233]: 親
+            - button "" [ref=e234] [cursor=pointer]:
+              - generic [ref=e235]: 
+        - generic [ref=e237]:
+          - generic [ref=e238]: 
+          - generic [ref=e239]: 
+          - generic [ref=e240]: 親
+          - button "" [ref=e241] [cursor=pointer]:
+            - generic [ref=e242]: 
+        - generic [ref=e244]:
+          - generic [ref=e245]: 
+          - generic [ref=e246]: 
+          - generic [ref=e247]: 子
+          - button "" [ref=e248] [cursor=pointer]:
+            - generic [ref=e249]: 
+        - generic [ref=e251]:
+          - generic [ref=e252]: 
+          - generic [ref=e253]: 
+          - generic [ref=e254]: ルート1
+          - button "" [ref=e255] [cursor=pointer]:
+            - generic [ref=e256]: 
+        - generic [ref=e258]:
+          - generic [ref=e259]: 
+          - generic [ref=e260]: 
+          - generic [ref=e261]: テストノード
+          - button "" [ref=e262] [cursor=pointer]:
+            - generic [ref=e263]: 
+        - generic [ref=e265]:
+          - generic [ref=e266]: 
+          - generic [ref=e267]: 
+          - generic [ref=e268]: 更新タイトル
+          - button "" [ref=e269] [cursor=pointer]:
+            - generic [ref=e270]: 
+        - generic [ref=e272]:
+          - generic [ref=e273]: 
+          - generic [ref=e274]: 
+          - generic [ref=e275]: 親ノード
+          - button "" [ref=e276] [cursor=pointer]:
+            - generic [ref=e277]: 
+        - generic [ref=e279]:
+          - generic [ref=e280]: 
+          - generic [ref=e281]: 
+          - generic [ref=e282]: 検索テストノード
+          - button "" [ref=e283] [cursor=pointer]:
+            - generic [ref=e284]: 
+        - generic [ref=e286]:
+          - generic [ref=e287]: 
+          - generic [ref=e288]: 
+          - generic [ref=e289]: ノード1
+          - button "" [ref=e290] [cursor=pointer]:
+            - generic [ref=e291]: 
+        - generic [ref=e293]:
+          - generic [ref=e294]: 
+          - generic [ref=e295]: 
+          - generic [ref=e296]: コピー元
+          - button "" [ref=e297] [cursor=pointer]:
+            - generic [ref=e298]: 
+        - generic [ref=e300]:
+          - generic [ref=e301]: 
+          - generic [ref=e302]: 
+          - generic [ref=e303]: 親
+          - button "" [ref=e304] [cursor=pointer]:
+            - generic [ref=e305]: 
+        - generic [ref=e307]:
+          - generic [ref=e308]: 
+          - generic [ref=e309]: 
+          - generic [ref=e310]: ノード2
+          - button "" [ref=e311] [cursor=pointer]:
+            - generic [ref=e312]: 
+        - generic [ref=e314]:
+          - generic [ref=e315]: 
+          - generic [ref=e316]: 
+          - generic [ref=e317]: 親A
+          - button "" [ref=e318] [cursor=pointer]:
+            - generic [ref=e319]: 
+        - generic [ref=e321]:
+          - generic [ref=e322]: 
+          - generic [ref=e323]: 
+          - generic [ref=e324]: ペースト先
+          - button "" [ref=e325] [cursor=pointer]:
+            - generic [ref=e326]: 
+        - generic [ref=e328]:
+          - generic [ref=e329]: 
+          - generic [ref=e330]: 
+          - generic [ref=e331]: 子X
+          - button "" [ref=e332] [cursor=pointer]:
+            - generic [ref=e333]: 
+        - generic [ref=e335]:
+          - generic [ref=e336]: 
+          - generic [ref=e337]: 
+          - generic [ref=e338]: 親A
+          - button "" [ref=e339] [cursor=pointer]:
+            - generic [ref=e340]: 
+        - generic [ref=e342]:
+          - generic [ref=e343]: 
+          - generic [ref=e344]: 
+          - generic [ref=e345]: 親1
+          - button "" [ref=e346] [cursor=pointer]:
+            - generic [ref=e347]: 
+        - generic [ref=e349]:
+          - generic [ref=e350]: 
+          - generic [ref=e351]: 
+          - generic [ref=e352]: 親B
+          - button "" [ref=e353] [cursor=pointer]:
+            - generic [ref=e354]: 
+        - generic [ref=e356]:
+          - generic [ref=e357]: 
+          - generic [ref=e358]: 
+          - generic [ref=e359]: 親2
+          - button "" [ref=e360] [cursor=pointer]:
+            - generic [ref=e361]: 
+        - generic [ref=e363]:
+          - generic [ref=e364]: 
+          - generic [ref=e365]: 
+          - generic [ref=e366]: 子X
+          - button "" [ref=e367] [cursor=pointer]:
+            - generic [ref=e368]: 
+        - generic [ref=e370]:
+          - generic [ref=e371]: 
+          - generic [ref=e372]: 
+          - generic [ref=e373]: 子
+          - button "" [ref=e374] [cursor=pointer]:
+            - generic [ref=e375]: 
+        - generic [ref=e377]:
+          - generic [ref=e378]: 
+          - generic [ref=e379]: 
+          - generic [ref=e380]: 親
+          - button "" [ref=e381] [cursor=pointer]:
+            - generic [ref=e382]: 
+        - generic [ref=e384]:
+          - generic [ref=e385]: 
+          - generic [ref=e386]: 
+          - generic [ref=e387]: 子
+          - button "" [ref=e388] [cursor=pointer]:
+            - generic [ref=e389]: 
+        - generic [ref=e391]:
+          - generic [ref=e392]: 
+          - generic [ref=e393]: 
+          - generic [ref=e394]: テストノード
+          - button "" [ref=e395] [cursor=pointer]:
+            - generic [ref=e396]: 
+        - generic [ref=e398]:
+          - generic [ref=e399]: 
+          - generic [ref=e400]: 
+          - generic [ref=e401]: 更新タイトル
+          - button "" [ref=e402] [cursor=pointer]:
+            - generic [ref=e403]: 
+        - generic [ref=e405]:
+          - generic [ref=e406]: 
+          - generic [ref=e407]: 
+          - generic [ref=e408]: ルート1
+          - button "" [ref=e409] [cursor=pointer]:
+            - generic [ref=e410]: 
+        - generic [ref=e412]:
+          - generic [ref=e413]: 
+          - generic [ref=e414]: 
+          - generic [ref=e415]: 親ノード
+          - button "" [ref=e416] [cursor=pointer]:
+            - generic [ref=e417]: 
+        - generic [ref=e419]:
+          - generic [ref=e420]: 
+          - generic [ref=e421]: 
+          - generic [ref=e422]: 検索テストノード
+          - button "" [ref=e423] [cursor=pointer]:
+            - generic [ref=e424]: 
+        - generic [ref=e426]:
+          - generic [ref=e427]: 
+          - generic [ref=e428]: 
+          - generic [ref=e429]: ノード1
+          - button "" [ref=e430] [cursor=pointer]:
+            - generic [ref=e431]: 
+        - generic [ref=e433]:
+          - generic [ref=e434]: 
+          - generic [ref=e435]: 
+          - generic [ref=e436]: ノード2
+          - button "" [ref=e437] [cursor=pointer]:
+            - generic [ref=e438]: 
+        - generic [ref=e440]:
+          - generic [ref=e441]: 
+          - generic [ref=e442]: 
+          - generic [ref=e443]: コピー元
+          - button "" [ref=e444] [cursor=pointer]:
+            - generic [ref=e445]: 
+        - generic [ref=e447]:
+          - generic [ref=e448]: 
+          - generic [ref=e449]: 
+          - generic [ref=e450]: ペースト先
+          - button "" [ref=e451] [cursor=pointer]:
+            - generic [ref=e452]: 
+        - generic [ref=e454]:
+          - generic [ref=e455]: 
+          - generic [ref=e456]: 
+          - generic [ref=e457]: 親
+          - button "" [ref=e458] [cursor=pointer]:
+            - generic [ref=e459]: 
+        - generic [ref=e461]:
+          - generic [ref=e462]: 
+          - generic [ref=e463]: 
+          - generic [ref=e464]: 親A
+          - button "" [ref=e465] [cursor=pointer]:
+            - generic [ref=e466]: 
+        - generic [ref=e468]:
+          - generic [ref=e469]: 
+          - generic [ref=e470]: 
+          - generic [ref=e471]: 子X
+          - button "" [ref=e472] [cursor=pointer]:
+            - generic [ref=e473]: 
+        - generic [ref=e475]:
+          - generic [ref=e476]: 
+          - generic [ref=e477]: 
+          - generic [ref=e478]: 親A
+          - button "" [ref=e479] [cursor=pointer]:
+            - generic [ref=e480]: 
+        - generic [ref=e482]:
+          - generic [ref=e483]: 
+          - generic [ref=e484]: 
+          - generic [ref=e485]: 親B
+          - button "" [ref=e486] [cursor=pointer]:
+            - generic [ref=e487]: 
+        - generic [ref=e489]:
+          - generic [ref=e490]: 
+          - generic [ref=e491]: 
+          - generic [ref=e492]: 子X
+          - button "" [ref=e493] [cursor=pointer]:
+            - generic [ref=e494]: 
+        - generic [ref=e496]:
+          - generic [ref=e497]: 
+          - generic [ref=e498]: 
+          - generic [ref=e499]: 親1
+          - button "" [ref=e500] [cursor=pointer]:
+            - generic [ref=e501]: 
+        - generic [ref=e503]:
+          - generic [ref=e504]: 
+          - generic [ref=e505]: 
+          - generic [ref=e506]: 親2
+          - button "" [ref=e507] [cursor=pointer]:
+            - generic [ref=e508]: 
+        - generic [ref=e510]:
+          - generic [ref=e511]: 
+          - generic [ref=e512]: 
+          - generic [ref=e513]: 子
+          - button "" [ref=e514] [cursor=pointer]:
+            - generic [ref=e515]: 
+        - generic [ref=e517]:
+          - generic [ref=e518]: 
+          - generic [ref=e519]: 
+          - generic [ref=e520]: 親
+          - button "" [ref=e521] [cursor=pointer]:
+            - generic [ref=e522]: 
+        - generic [ref=e524]:
+          - generic [ref=e525]: 
+          - generic [ref=e526]: 
+          - generic [ref=e527]: 子
+          - button "" [ref=e528] [cursor=pointer]:
+            - generic [ref=e529]: 
+        - generic [ref=e531]:
+          - generic [ref=e532]: 
+          - generic [ref=e533]: 
+          - generic [ref=e534]: テストノード
+          - button "" [ref=e535] [cursor=pointer]:
+            - generic [ref=e536]: 
+        - generic [ref=e538]:
+          - generic [ref=e539]: 
+          - generic [ref=e540]: 
+          - generic [ref=e541]: 更新タイトル
+          - button "" [ref=e542] [cursor=pointer]:
+            - generic [ref=e543]: 
+        - generic [ref=e545]:
+          - generic [ref=e546]: 
+          - generic [ref=e547]: 
+          - generic [ref=e548]: ルート1
+          - button "" [ref=e549] [cursor=pointer]:
+            - generic [ref=e550]: 
+        - generic [ref=e552]:
+          - generic [ref=e553]: 
+          - generic [ref=e554]: 
+          - generic [ref=e555]: 親ノード
+          - button "" [ref=e556] [cursor=pointer]:
+            - generic [ref=e557]: 
+        - generic [ref=e559]:
+          - generic [ref=e560]: 
+          - generic [ref=e561]: 
+          - generic [ref=e562]: 検索テストノード
+          - button "" [ref=e563] [cursor=pointer]:
+            - generic [ref=e564]: 
+        - generic [ref=e566]:
+          - generic [ref=e567]: 
+          - generic [ref=e568]: 
+          - generic [ref=e569]: ノード1
+          - button "" [ref=e570] [cursor=pointer]:
+            - generic [ref=e571]: 
+        - generic [ref=e573]:
+          - generic [ref=e574]: 
+          - generic [ref=e575]: 
+          - generic [ref=e576]: ノード2
+          - button "" [ref=e577] [cursor=pointer]:
+            - generic [ref=e578]: 
+        - generic [ref=e580]:
+          - generic [ref=e581]: 
+          - generic [ref=e582]: 
+          - generic [ref=e583]: コピー元
+          - button "" [ref=e584] [cursor=pointer]:
+            - generic [ref=e585]: 
+        - generic [ref=e587]:
+          - generic [ref=e588]: 
+          - generic [ref=e589]: 
+          - generic [ref=e590]: ペースト先
+          - button "" [ref=e591] [cursor=pointer]:
+            - generic [ref=e592]: 
+        - generic [ref=e594]:
+          - generic [ref=e595]: 
+          - generic [ref=e596]: 
+          - generic [ref=e597]: 親
+          - button "" [ref=e598] [cursor=pointer]:
+            - generic [ref=e599]: 
+        - generic [ref=e601]:
+          - generic [ref=e602]: 
+          - generic [ref=e603]: 
+          - generic [ref=e604]: 親A
+          - button "" [ref=e605] [cursor=pointer]:
+            - generic [ref=e606]: 
+        - generic [ref=e608]:
+          - generic [ref=e609]: 
+          - generic [ref=e610]: 
+          - generic [ref=e611]: 子X
+          - button "" [ref=e612] [cursor=pointer]:
+            - generic [ref=e613]: 
+        - generic [ref=e615]:
+          - generic [ref=e616]: 
+          - generic [ref=e617]: 
+          - generic [ref=e618]: 親A
+          - button "" [ref=e619] [cursor=pointer]:
+            - generic [ref=e620]: 
+        - generic [ref=e622]:
+          - generic [ref=e623]: 
+          - generic [ref=e624]: 
+          - generic [ref=e625]: 親B
+          - button "" [ref=e626] [cursor=pointer]:
+            - generic [ref=e627]: 
+        - generic [ref=e629]:
+          - generic [ref=e630]: 
+          - generic [ref=e631]: 
+          - generic [ref=e632]: 子X
+          - button "" [ref=e633] [cursor=pointer]:
+            - generic [ref=e634]: 
+        - generic [ref=e636]:
+          - generic [ref=e637]: 
+          - generic [ref=e638]: 
+          - generic [ref=e639]: 親1
+          - button "" [ref=e640] [cursor=pointer]:
+            - generic [ref=e641]: 
+        - generic [ref=e643]:
+          - generic [ref=e644]: 
+          - generic [ref=e645]: 
+          - generic [ref=e646]: 親2
+          - button "" [ref=e647] [cursor=pointer]:
+            - generic [ref=e648]: 
+        - generic [ref=e650]:
+          - generic [ref=e651]: 
+          - generic [ref=e652]: 
+          - generic [ref=e653]: 子
+          - button "" [ref=e654] [cursor=pointer]:
+            - generic [ref=e655]: 
+        - generic [ref=e657]:
+          - generic [ref=e658]: 
+          - generic [ref=e659]: 
+          - generic [ref=e660]: 親
+          - button "" [ref=e661] [cursor=pointer]:
+            - generic [ref=e662]: 
+        - generic [ref=e664]:
+          - generic [ref=e665]: 
+          - generic [ref=e666]: 
+          - generic [ref=e667]: 子
+          - button "" [ref=e668] [cursor=pointer]:
+            - generic [ref=e669]: 
+        - generic [ref=e671]:
+          - generic [ref=e672]: 
+          - generic [ref=e673]: 
+          - generic [ref=e674]: 親A
+          - button "" [ref=e675] [cursor=pointer]:
+            - generic [ref=e676]: 
+        - generic [ref=e678]:
+          - generic [ref=e679]: 
+          - generic [ref=e680]: 
+          - generic [ref=e681]: 子X
+          - button "" [ref=e682] [cursor=pointer]:
+            - generic [ref=e683]: 
+        - generic [ref=e685]:
+          - generic [ref=e686]: 
+          - generic [ref=e687]: 
+          - generic [ref=e688]: 親A
+          - button "" [ref=e689] [cursor=pointer]:
+            - generic [ref=e690]: 
+        - generic [ref=e692]:
+          - generic [ref=e693]: 
+          - generic [ref=e694]: 
+          - generic [ref=e695]: 親B
+          - button "" [ref=e696] [cursor=pointer]:
+            - generic [ref=e697]: 
+        - generic [ref=e699]:
+          - generic [ref=e700]: 
+          - generic [ref=e701]: 
+          - generic [ref=e702]: 子X
+          - button "" [ref=e703] [cursor=pointer]:
+            - generic [ref=e704]: 
+        - generic [ref=e706]:
+          - generic [ref=e707]: 
+          - generic [ref=e708]: 
+          - generic [ref=e709]: 親1
+          - button "" [ref=e710] [cursor=pointer]:
+            - generic [ref=e711]: 
+        - generic [ref=e713]:
+          - generic [ref=e714]: 
+          - generic [ref=e715]: 
+          - generic [ref=e716]: 親2
+          - button "" [ref=e717] [cursor=pointer]:
+            - generic [ref=e718]: 
+        - generic [ref=e720]:
+          - generic [ref=e721]: 
+          - generic [ref=e722]: 
+          - generic [ref=e723]: 子
+          - button "" [ref=e724] [cursor=pointer]:
+            - generic [ref=e725]: 
+        - generic [ref=e726]:
+          - generic [ref=e727]:
+            - generic [ref=e728]: 
+            - generic [ref=e729]: 
+            - generic [ref=e730]: 
+            - generic [ref=e731]: ノード1
+            - button "" [ref=e732] [cursor=pointer]:
+              - generic [ref=e733]: 
+          - generic:
+            - generic [ref=e735]:
+              - generic [ref=e736]: 
+              - generic [ref=e737]: 
+              - generic [ref=e738]: テストノード
+              - button "" [ref=e739] [cursor=pointer]:
+                - generic [ref=e740]: 
+            - generic [ref=e742]:
+              - generic [ref=e743]: 
+              - generic [ref=e744]: 
+              - generic [ref=e745]: 更新タイトル
+              - generic "複数の親を持つノード" [ref=e746]:
+                - generic [ref=e747]: 
+                - text: "2"
+              - button "" [ref=e748] [cursor=pointer]:
+                - generic [ref=e749]: 
+        - generic [ref=e751]:
+          - generic [ref=e752]: 
+          - generic [ref=e753]: 
+          - generic [ref=e754]: テストノード
+          - button "" [ref=e755] [cursor=pointer]:
+            - generic [ref=e756]: 
+        - generic [ref=e757]:
+          - generic [ref=e758]:
+            - generic [ref=e759]: 
+            - generic [ref=e760]: 
+            - generic [ref=e761]: 
+            - generic [ref=e762]: ルート1
+            - button "" [ref=e763] [cursor=pointer]:
+              - generic [ref=e764]: 
+          - generic [ref=e766]:
+            - generic [ref=e767]: 
+            - generic [ref=e768]: 
+            - generic [ref=e769]: 更新タイトル
+            - generic "複数の親を持つノード" [ref=e770]:
+              - generic [ref=e771]: 
+              - text: "2"
+            - button "" [ref=e772] [cursor=pointer]:
+              - generic [ref=e773]: 
+        - generic [ref=e775]:
+          - generic [ref=e776]: 
+          - generic [ref=e777]: 
+          - generic [ref=e778]: 親ノード
+          - button "" [ref=e779] [cursor=pointer]:
+            - generic [ref=e780]: 
+        - generic [ref=e782]:
+          - generic [ref=e783]: 
+          - generic [ref=e784]: 
+          - generic [ref=e785]: 検索テストノード
+          - button "" [ref=e786] [cursor=pointer]:
+            - generic [ref=e787]: 
+        - generic [ref=e789]:
+          - generic [ref=e790]: 
+          - generic [ref=e791]: 
+          - generic [ref=e792]: ノード1
+          - button "" [ref=e793] [cursor=pointer]:
+            - generic [ref=e794]: 
+        - generic [ref=e796]:
+          - generic [ref=e797]: 
+          - generic [ref=e798]: 
+          - generic [ref=e799]: ノード2
+          - button "" [ref=e800] [cursor=pointer]:
+            - generic [ref=e801]: 
+        - generic [ref=e803]:
+          - generic [ref=e804]: 
+          - generic [ref=e805]: 
+          - generic [ref=e806]: テストノード
+          - button "" [ref=e807] [cursor=pointer]:
+            - generic [ref=e808]: 
+        - generic [ref=e810]:
+          - generic [ref=e811]: 
+          - generic [ref=e812]: 
+          - generic [ref=e813]: ルート1
+          - button "" [ref=e814] [cursor=pointer]:
+            - generic [ref=e815]: 
+        - generic [ref=e817]:
+          - generic [ref=e818]: 
+          - generic [ref=e819]: 
+          - generic [ref=e820]: 更新タイトル
+          - button "" [ref=e821] [cursor=pointer]:
+            - generic [ref=e822]: 
+        - generic [ref=e824]:
+          - generic [ref=e825]: 
+          - generic [ref=e826]: 
+          - generic [ref=e827]: 親ノード
+          - button "" [ref=e828] [cursor=pointer]:
+            - generic [ref=e829]: 
+        - generic [ref=e831]:
+          - generic [ref=e832]: 
+          - generic [ref=e833]: 
+          - generic [ref=e834]: 検索テストノード
+          - button "" [ref=e835] [cursor=pointer]:
+            - generic [ref=e836]: 
+        - generic [ref=e838]:
+          - generic [ref=e839]: 
+          - generic [ref=e840]: 
+          - generic [ref=e841]: ノード1
+          - button "" [ref=e842] [cursor=pointer]:
+            - generic [ref=e843]: 
+        - generic [ref=e845]:
+          - generic [ref=e846]: 
+          - generic [ref=e847]: 
+          - generic [ref=e848]: ノード2
+          - button "" [ref=e849] [cursor=pointer]:
+            - generic [ref=e850]: 
+        - generic [ref=e852]:
+          - generic [ref=e853]: 
+          - generic [ref=e854]: 
+          - generic [ref=e855]: 更新タイトル
+          - button "" [ref=e856] [cursor=pointer]:
+            - generic [ref=e857]: 
+        - generic [ref=e859]:
+          - generic [ref=e860]: 
+          - generic [ref=e861]: 
+          - generic [ref=e862]: テストノード
+          - button "" [ref=e863] [cursor=pointer]:
+            - generic [ref=e864]: 
+        - generic [ref=e866]:
+          - generic [ref=e867]: 
+          - generic [ref=e868]: 
+          - generic [ref=e869]: ルート1
+          - button "" [ref=e870] [cursor=pointer]:
+            - generic [ref=e871]: 
+        - generic [ref=e873]:
+          - generic [ref=e874]: 
+          - generic [ref=e875]: 
+          - generic [ref=e876]: 親ノード
+          - button "" [ref=e877] [cursor=pointer]:
+            - generic [ref=e878]: 
+        - generic [ref=e880]:
+          - generic [ref=e881]: 
+          - generic [ref=e882]: 
+          - generic [ref=e883]: 検索テストノード
+          - button "" [ref=e884] [cursor=pointer]:
+            - generic [ref=e885]: 
+        - generic [ref=e887]:
+          - generic [ref=e888]: 
+          - generic [ref=e889]: 
+          - generic [ref=e890]: ノード1
+          - button "" [ref=e891] [cursor=pointer]:
+            - generic [ref=e892]: 
+        - generic [ref=e894]:
+          - generic [ref=e895]: 
+          - generic [ref=e896]: 
+          - generic [ref=e897]: ノード2
+          - button "" [ref=e898] [cursor=pointer]:
+            - generic [ref=e899]: 
+        - generic [ref=e901]:
+          - generic [ref=e902]: 
+          - generic [ref=e903]: 
+          - generic [ref=e904]: ルート1
+          - button "" [ref=e905] [cursor=pointer]:
+            - generic [ref=e906]: 
+        - generic [ref=e908]:
+          - generic [ref=e909]: 
+          - generic [ref=e910]: 
+          - generic [ref=e911]: テストノード
+          - button "" [ref=e912] [cursor=pointer]:
+            - generic [ref=e913]: 
+        - generic [ref=e915]:
+          - generic [ref=e916]: 
+          - generic [ref=e917]: 
+          - generic [ref=e918]: 更新タイトル
+          - button "" [ref=e919] [cursor=pointer]:
+            - generic [ref=e920]: 
+        - generic [ref=e921]:
+          - generic [ref=e922]:
+            - generic [ref=e923]: 
+            - generic [ref=e924]: 
+            - generic [ref=e925]: 
+            - generic [ref=e926]: 親ノード
+            - button "" [ref=e927] [cursor=pointer]:
+              - generic [ref=e928]: 
+          - generic [ref=e929]:
+            - generic [ref=e930]:
+              - generic [ref=e931]: 
+              - generic [ref=e932]: 
+              - generic [ref=e933]: 
+              - generic [ref=e934]: ノード1
+              - generic "複数の親を持つノード" [ref=e935]:
+                - generic [ref=e936]: 
+                - text: "2"
+              - button "" [ref=e937] [cursor=pointer]:
+                - generic [ref=e938]: 
+            - generic [ref=e939]:
+              - generic [ref=e940]:
+                - generic [ref=e941]: 
+                - generic [ref=e942]: 
+                - generic [ref=e943]: 
+                - generic [ref=e944]: ルート1
+                - button "" [ref=e945] [cursor=pointer]:
+                  - generic [ref=e946]: 
+              - generic:
+                - generic [ref=e948]:
+                  - generic [ref=e949]: 
+                  - generic [ref=e950]: 
+                  - generic [ref=e951]: 更新タイトル
+                  - generic "複数の親を持つノード" [ref=e952]:
+                    - generic [ref=e953]: 
+                    - text: "2"
+                  - button "" [ref=e954] [cursor=pointer]:
+                    - generic [ref=e955]: 
+                - generic [ref=e957]:
+                  - generic [ref=e958]: 
+                  - generic [ref=e959]: 
+                  - generic [ref=e960]: ノード2
+                  - button "" [ref=e961] [cursor=pointer]:
+                    - generic [ref=e962]: 
+                - generic [ref=e964]:
+                  - generic [ref=e965]: 
+                  - generic [ref=e966]: 
+                  - generic [ref=e967]: テストノード
+                  - button "" [ref=e968] [cursor=pointer]:
+                    - generic [ref=e969]: 
+        - generic [ref=e970]:
+          - generic [ref=e971]:
+            - generic [ref=e972]: 
+            - generic [ref=e973]: 
+            - generic [ref=e974]: 
+            - generic [ref=e975]: 検索テストノード
+            - button "" [ref=e976] [cursor=pointer]:
+              - generic [ref=e977]: 
+          - generic [ref=e978]:
+            - generic [ref=e979]:
+              - generic [ref=e980]: 
+              - generic [ref=e981]: 
+              - generic [ref=e982]: 
+              - generic [ref=e983]: ノード1
+              - generic "複数の親を持つノード" [ref=e984]:
+                - generic [ref=e985]: 
+                - text: "2"
+              - button "" [ref=e986] [cursor=pointer]:
+                - generic [ref=e987]: 
+            - generic [ref=e988]:
+              - generic [ref=e989]:
+                - generic [ref=e990]: 
+                - generic [ref=e991]: 
+                - generic [ref=e992]: 
+                - generic [ref=e993]: ルート1
+                - button "" [ref=e994] [cursor=pointer]:
+                  - generic [ref=e995]: 
+              - generic:
+                - generic [ref=e997]:
+                  - generic [ref=e998]: 
+                  - generic [ref=e999]: 
+                  - generic [ref=e1000]: 更新タイトル
+                  - generic "複数の親を持つノード" [ref=e1001]:
+                    - generic [ref=e1002]: 
+                    - text: "2"
+                  - button "" [ref=e1003] [cursor=pointer]:
+                    - generic [ref=e1004]: 
+                - generic [ref=e1006]:
+                  - generic [ref=e1007]: 
+                  - generic [ref=e1008]: 
+                  - generic [ref=e1009]: ノード2
+                  - button "" [ref=e1010] [cursor=pointer]:
+                    - generic [ref=e1011]: 
+                - generic [ref=e1013]:
+                  - generic [ref=e1014]: 
+                  - generic [ref=e1015]: 
+                  - generic [ref=e1016]: テストノード
+                  - button "" [ref=e1017] [cursor=pointer]:
+                    - generic [ref=e1018]: 
+        - generic [ref=e1019]:
+          - generic [ref=e1020]:
+            - generic [ref=e1021]: 
+            - generic [ref=e1022]: 
+            - generic [ref=e1023]: 
+            - generic [ref=e1024]: 親ノード
+            - button "" [ref=e1025] [cursor=pointer]:
+              - generic [ref=e1026]: 
+          - generic [ref=e1028]:
+            - generic [ref=e1029]: 
+            - generic [ref=e1030]: 
+            - generic [ref=e1031]: 更新タイトル
+            - generic "複数の親を持つノード" [ref=e1032]:
+              - generic [ref=e1033]: 
+              - text: "2"
+            - button "" [ref=e1034] [cursor=pointer]:
+              - generic [ref=e1035]: 
+        - generic [ref=e1037]:
+          - generic [ref=e1038]: 
+          - generic [ref=e1039]: 
+          - generic [ref=e1040]: 検索テストノード
+          - button "" [ref=e1041] [cursor=pointer]:
+            - generic [ref=e1042]: 
+        - generic [ref=e1044]:
+          - generic [ref=e1045]: 
+          - generic [ref=e1046]: 
+          - generic [ref=e1047]: ノード2
+          - button "" [ref=e1048] [cursor=pointer]:
+            - generic [ref=e1049]: 
+        - generic [ref=e1051]:
+          - generic [ref=e1052]: 
+          - generic [ref=e1053]: 
+          - generic [ref=e1054]: テストノード
+          - button "" [ref=e1055] [cursor=pointer]:
+            - generic [ref=e1056]: 
+        - generic [ref=e1058]:
+          - generic [ref=e1059]: 
+          - generic [ref=e1060]: 
+          - generic [ref=e1061]: ルート1
+          - button "" [ref=e1062] [cursor=pointer]:
+            - generic [ref=e1063]: 
+        - generic [ref=e1065]:
+          - generic [ref=e1066]: 
+          - generic [ref=e1067]: 
+          - generic [ref=e1068]: ノード1
+          - button "" [ref=e1069] [cursor=pointer]:
+            - generic [ref=e1070]: 
+        - generic [ref=e1072]:
+          - generic [ref=e1073]: 
+          - generic [ref=e1074]: 
+          - generic [ref=e1075]: 親
+          - button "" [ref=e1076] [cursor=pointer]:
+            - generic [ref=e1077]: 
+        - generic [ref=e1079]:
+          - generic [ref=e1080]: 
+          - generic [ref=e1081]: 
+          - generic [ref=e1082]: ノード2
+          - button "" [ref=e1083] [cursor=pointer]:
+            - generic [ref=e1084]: 
+        - generic [ref=e1085]:
+          - generic [ref=e1086]:
+            - generic [ref=e1087]: 
+            - generic [ref=e1088]: 
+            - generic [ref=e1089]: 
+            - generic [ref=e1090]: ペースト先
+            - button "" [ref=e1091] [cursor=pointer]:
+              - generic [ref=e1092]: 
+          - generic [ref=e1094]:
+            - generic [ref=e1095]: 
+            - generic [ref=e1096]: 
+            - generic [ref=e1097]: コピー元
+            - button "" [ref=e1098] [cursor=pointer]:
+              - generic [ref=e1099]: 
+        - generic [ref=e1100]:
+          - generic [ref=e1101]:
+            - generic [ref=e1102]: 
+            - generic [ref=e1103]: 
+            - generic [ref=e1104]: 
+            - generic [ref=e1105]: 親A
+            - button "" [ref=e1106] [cursor=pointer]:
+              - generic [ref=e1107]: 
+          - generic [ref=e1109]:
+            - generic [ref=e1110]: 
+            - generic [ref=e1111]: 
+            - generic [ref=e1112]: 子X
+            - button "" [ref=e1113] [cursor=pointer]:
+              - generic [ref=e1114]: 
+        - generic [ref=e1116]:
+          - generic [ref=e1117]: 
+          - generic [ref=e1118]: 
+          - generic [ref=e1119]: 親A
+          - button "" [ref=e1120] [cursor=pointer]:
+            - generic [ref=e1121]: 
+        - generic [ref=e1123]:
+          - generic [ref=e1124]: 
+          - generic [ref=e1125]: 
+          - generic [ref=e1126]: 親B
+          - button "" [ref=e1127] [cursor=pointer]:
+            - generic [ref=e1128]: 
+        - generic [ref=e1130]:
+          - generic [ref=e1131]: 
+          - generic [ref=e1132]: 
+          - generic [ref=e1133]: 子X
+          - button "" [ref=e1134] [cursor=pointer]:
+            - generic [ref=e1135]: 
+        - generic [ref=e1137]:
+          - generic [ref=e1138]: 
+          - generic [ref=e1139]: 
+          - generic [ref=e1140]: テストノード
+          - button "" [ref=e1141] [cursor=pointer]:
+            - generic [ref=e1142]: 
+        - generic [ref=e1144]:
+          - generic [ref=e1145]: 
+          - generic [ref=e1146]: 
+          - generic [ref=e1147]: 編集テスト
+          - button "" [ref=e1148] [cursor=pointer]:
+            - generic [ref=e1149]: 
+        - generic [ref=e1151]:
+          - generic [ref=e1152]: 
+          - generic [ref=e1153]: 
+          - generic [ref=e1154]: ルート1
+          - button "" [ref=e1155] [cursor=pointer]:
+            - generic [ref=e1156]: 
+        - generic [ref=e1158]:
+          - generic [ref=e1159]: 
+          - generic [ref=e1160]: 
+          - generic [ref=e1161]: 親ノード
+          - button "" [ref=e1162] [cursor=pointer]:
+            - generic [ref=e1163]: 
+        - generic [ref=e1165]:
+          - generic [ref=e1166]: 
+          - generic [ref=e1167]: 
+          - generic [ref=e1168]: 検索テストノード
+          - button "" [ref=e1169] [cursor=pointer]:
+            - generic [ref=e1170]: 
+        - generic [ref=e1172]:
+          - generic [ref=e1173]: 
+          - generic [ref=e1174]: 
+          - generic [ref=e1175]: ノード1
+          - button "" [ref=e1176] [cursor=pointer]:
+            - generic [ref=e1177]: 
+        - generic [ref=e1179]:
+          - generic [ref=e1180]: 
+          - generic [ref=e1181]: 
+          - generic [ref=e1182]: コピー元
+          - button "" [ref=e1183] [cursor=pointer]:
+            - generic [ref=e1184]: 
+        - generic [ref=e1186]:
+          - generic [ref=e1187]: 
+          - generic [ref=e1188]: 
+          - generic [ref=e1189]: 親
+          - button "" [ref=e1190] [cursor=pointer]:
+            - generic [ref=e1191]: 
+        - generic [ref=e1193]:
+          - generic [ref=e1194]: 
+          - generic [ref=e1195]: 
+          - generic [ref=e1196]: ノード2
+          - button "" [ref=e1197] [cursor=pointer]:
+            - generic [ref=e1198]: 
+        - generic [ref=e1200]:
+          - generic [ref=e1201]: 
+          - generic [ref=e1202]: 
+          - generic [ref=e1203]: ペースト先
+          - button "" [ref=e1204] [cursor=pointer]:
+            - generic [ref=e1205]: 
+        - generic [ref=e1206]:
+          - generic [ref=e1207]:
+            - generic [ref=e1208]: 
+            - generic [ref=e1209]: 
+            - generic [ref=e1210]: 
+            - generic [ref=e1211]: 親B
+            - button "" [ref=e1212] [cursor=pointer]:
+              - generic [ref=e1213]: 
+          - generic [ref=e1215]:
+            - generic [ref=e1216]: 
+            - generic [ref=e1217]: 
+            - generic [ref=e1218]: 子X
+            - button "" [ref=e1219] [cursor=pointer]:
+              - generic [ref=e1220]: 
+        - generic [ref=e1221]:
+          - generic [ref=e1222]:
+            - generic [ref=e1223]: 
+            - generic [ref=e1224]: 
+            - generic [ref=e1225]: 
+            - generic [ref=e1226]: 親A
+            - button "" [ref=e1227] [cursor=pointer]:
+              - generic [ref=e1228]: 
+          - generic [ref=e1229]:
+            - generic [ref=e1230]:
+              - generic [ref=e1231]: 
+              - generic [ref=e1232]: 
+              - generic [ref=e1233]: 
+              - generic [ref=e1234]: 親A
+              - button "" [ref=e1235] [cursor=pointer]:
+                - generic [ref=e1236]: 
+            - generic [ref=e1238]:
+              - generic [ref=e1239]: 
+              - generic [ref=e1240]: 
+              - generic [ref=e1241]: 子X
+              - button "" [ref=e1242] [cursor=pointer]:
+                - generic [ref=e1243]: 
+        - generic [ref=e1244]:
+          - generic [ref=e1245]:
+            - generic [ref=e1246]: 
+            - generic [ref=e1247]: 
+            - generic [ref=e1248]: 
+            - generic [ref=e1249]: アイデアメモ
+            - button "" [ref=e1250] [cursor=pointer]:
+              - generic [ref=e1251]: 
+          - generic [ref=e1253]:
+            - generic [ref=e1254]: 
+            - generic [ref=e1255]: 
+            - generic [ref=e1256]: 機能追加案
+            - button "" [ref=e1257] [cursor=pointer]:
+              - generic [ref=e1258]: 
+    - generic [ref=e1262]:
+      - generic [ref=e1264]:
+        - heading "ノード詳細" [level=2] [ref=e1265]
+        - generic [ref=e1266]:
+          - button " 削除" [ref=e1267] [cursor=pointer]:
+            - generic [ref=e1268]: 
+            - text: 削除
+          - button " 保存" [ref=e1269] [cursor=pointer]:
+            - generic [ref=e1270]: 
+            - text: 保存
+      - generic [ref=e1271]:
+        - generic [ref=e1272]:
+          - generic [ref=e1273]:
+            - generic [ref=e1274]: 
+            - text: タイトル
+          - textbox [ref=e1275]: 検索テストノード
+        - generic [ref=e1276]:
+          - generic [ref=e1277]:
+            - generic [ref=e1278]: 
+            - text: 内容 (Markdown対応)
+          - application [ref=e1279]:
+            - toolbar [ref=e1280]:
+              - button "Bold" [ref=e1281] [cursor=pointer]:
+                - generic [ref=e1282]: 
+              - button "Italic" [ref=e1283] [cursor=pointer]:
+                - generic [ref=e1284]: 
+              - button "Heading" [ref=e1285] [cursor=pointer]:
+                - generic [ref=e1286]: 
+              - generic [ref=e1287]: "|"
+              - button "Quote" [ref=e1288] [cursor=pointer]:
+                - generic [ref=e1289]: 
+              - button "Generic List" [ref=e1290] [cursor=pointer]:
+                - generic [ref=e1291]: 
+              - button "Numbered List" [ref=e1292] [cursor=pointer]:
+                - generic [ref=e1293]: 
+              - generic [ref=e1294]: "|"
+              - button "Create Link" [ref=e1295] [cursor=pointer]:
+                - generic [ref=e1296]: 
+              - button "Insert Image" [ref=e1297] [cursor=pointer]:
+                - generic [ref=e1298]: 
+              - generic [ref=e1299]: "|"
+              - button "Toggle Preview" [ref=e1300] [cursor=pointer]:
+                - generic [ref=e1301]: 
+              - button "Toggle Side by Side" [ref=e1302] [cursor=pointer]:
+                - generic [ref=e1303]: 
+              - button "Toggle Fullscreen" [ref=e1304] [cursor=pointer]:
+                - generic [ref=e1305]: 
+              - generic [ref=e1306]: "|"
+              - button "Markdown Guide" [ref=e1307] [cursor=pointer]:
+                - generic [ref=e1308]: 
+            - generic [ref=e1309]:
+              - textbox [ref=e1310]
+              - generic [ref=e1313]:
+                - generic: Markdownで内容を入力...
+            - generic [ref=e1315]:
+              - generic [ref=e1316]: "lines: 1"
+              - generic [ref=e1317]: "words: 0"
+              - generic [ref=e1318]: 1:1
+        - generic [ref=e1319]:
+          - generic [ref=e1320]:
+            - generic [ref=e1321]: 
+            - text: 作成者
+          - textbox [ref=e1322]: TestUser
+        - generic [ref=e1323]:
+          - generic [ref=e1324]:
+            - generic [ref=e1325]:
+              - generic [ref=e1326]: 
+              - text: 作成日
+            - generic [ref=e1327]: 2025/12/19 09:26
+          - generic [ref=e1328]:
+            - generic [ref=e1329]:
+              - generic [ref=e1330]: 
+              - text: 更新日
+            - generic [ref=e1331]: 2025/12/19 09:26
+  - generic [ref=e1332]:
+    - generic [ref=e1333]: ⚠
+    - generic [ref=e1334]: 親子関係の追加に失敗しました
+    - button "×" [ref=e1335] [cursor=pointer]
+```
