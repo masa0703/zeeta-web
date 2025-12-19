@@ -16,6 +16,7 @@ type Bindings = {
   GITHUB_CLIENT_SECRET: string
   GOOGLE_CLIENT_ID: string
   GOOGLE_CLIENT_SECRET: string
+  BASE_URL: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -170,7 +171,8 @@ app.get('/api/auth/google', (c) => {
   const state = crypto.randomUUID()
   setCookie(c, 'oauth_state', state, { httpOnly: true, secure: true, maxAge: 600, path: '/' })
 
-  const redirectUri = new URL('/api/auth/google/callback', c.req.url).toString()
+  const baseUrl = c.env.BASE_URL || new URL(c.req.url).origin
+  const redirectUri = new URL('/api/auth/google/callback', baseUrl).toString()
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -196,7 +198,8 @@ app.get('/api/auth/google/callback', async (c) => {
 
   const clientId = c.env.GOOGLE_CLIENT_ID
   const clientSecret = c.env.GOOGLE_CLIENT_SECRET
-  const redirectUri = new URL('/api/auth/google/callback', c.req.url).toString()
+  const baseUrl = c.env.BASE_URL || new URL(c.req.url).origin
+  const redirectUri = new URL('/api/auth/google/callback', baseUrl).toString()
 
   try {
     // Exchange code for tokens

@@ -6,6 +6,9 @@
 
 - [データベース情報](#データベース情報)
 - [テーブル一覧](#テーブル一覧)
+  - [users テーブル](#users-テーブル)
+  - [oauth_accounts テーブル](#oauth_accounts-テーブル)
+  - [verification_tokens テーブル](#verification_tokens-テーブル)
   - [nodes テーブル](#nodes-テーブル)
   - [node_relations テーブル](#node_relations-テーブル)
 - [データモデルの関係](#データモデルの関係)
@@ -21,6 +24,110 @@
 - **マイグレーション**: `migrations/` ディレクトリで管理
 
 ## テーブル一覧
+
+### users テーブル
+
+アプリケーションのユーザー情報を管理するテーブル。
+
+**スキーマ**:
+```sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  email TEXT UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  google_id TEXT,
+  is_verified INTEGER DEFAULT 0
+);
+```
+
+**カラム定義**:
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | ユーザーID |
+| username | TEXT | NOT NULL, UNIQUE | ユーザー名（ログインID） |
+| password_hash | TEXT | NOT NULL | ハッシュ化されたパスワード（OAuthユーザーは固定値） |
+| email | TEXT | UNIQUE | メールアドレス |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| google_id | TEXT | - | GoogleアカウントID（OAuth連携用） |
+| is_verified | INTEGER | DEFAULT 0 | メールアドレス確認済みフラグ (0: 未確認, 1: 確認済み) |
+
+**インデックス**:
+```sql
+CREATE INDEX idx_users_username ON users(username);
+CREATE UNIQUE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
+```
+
+---
+
+### oauth_accounts テーブル
+
+ユーザーのOAuth連携情報（GitHub, Google等）を管理するテーブル。1ユーザーが複数のプロバイダーと連携可能。
+
+**スキーマ**:
+```sql
+CREATE TABLE oauth_accounts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  provider TEXT NOT NULL,
+  provider_user_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(provider, provider_user_id)
+);
+```
+
+**カラム定義**:
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | ID |
+| user_id | INTEGER | NOT NULL | `users`テーブルへの外部キー |
+| provider | TEXT | NOT NULL | プロバイダー名 ('google', 'github' 等) |
+| provider_user_id | TEXT | NOT NULL | プロバイダー側のユーザーID |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 連携日時 |
+
+**インデックス**:
+```sql
+CREATE INDEX idx_oauth_accounts_user_id ON oauth_accounts(user_id);
+```
+
+---
+
+### verification_tokens テーブル
+
+メールアドレス確認用のトークンを一時的に保存するテーブル。
+
+**スキーマ**:
+```sql
+CREATE TABLE verification_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+**カラム定義**:
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | INTEGER | PRIMARY KEY, AUTOINCREMENT | ID |
+| user_id | INTEGER | NOT NULL | `users`テーブルへの外部キー |
+| token | TEXT | NOT NULL | 検証用トークン（UUID等） |
+| expires_at | DATETIME | NOT NULL | トークンの有効期限 |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス**:
+```sql
+CREATE INDEX idx_verification_tokens_token ON verification_tokens(token);
+```
+
+---
 
 ### nodes テーブル
 
@@ -110,11 +217,16 @@ CREATE INDEX idx_relations_child ON node_relations(child_node_id);
 ## データモデルの関係
 
 ```
+users (1) ----< oauth_accounts
+  |
+  +----< verification_tokens
+
 nodes (1) ----< node_relations >---- (∞) nodes
   親ノード              関係             子ノード
 ```
 
 **特徴**:
+- **ユーザー認証**: `users`テーブルを中心に、OAuth連携やメール認証情報を管理
 - **多対多関係**: 1つの子ノードが複数の親を持てる
 - **階層構造**: ツリー構造を表現可能
 - **ルートノード**: 親を持たないノード（`node_relations`の`child_node_id`に存在しない）
@@ -153,17 +265,18 @@ node_relations:
 | 0003_remove_parent_id.sql | parent_idとpositionカラム削除 |
 | 0004_add_position_to_relations.sql | node_relationsにpositionカラム追加 |
 | 0005_add_root_position.sql | nodesにroot_positionカラム追加 |
+| 0006_add_users_table.sql | usersテーブル追加 |
+| 0007_add_auth_fields.sql | 認証関連フィールド・テーブル（OAuth, Token）追加 |
+| 0008_create_oauth_accounts.sql | oauth_accountsテーブル追加 |
 
 **マイグレーション実行方法**:
 
 ```bash
 # ローカル環境
-for i in migrations/*.sql; do
-  sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/[db-file].sqlite < "$i"
-done
+npx wrangler d1 migrations apply [database-name] --local
 
 # 本番環境
-npx wrangler d1 execute [database-name] --remote --file=./migrations/XXXX.sql
+npx wrangler d1 migrations apply [database-name] --remote
 ```
 
 ---
@@ -215,7 +328,7 @@ SELECT parent_node_id FROM ancestors;
 
 ## パフォーマンス考慮事項
 
-1. **インデックス**: 頻繁に検索される`created_at`, `root_position`, `parent_node_id`, `child_node_id`にインデックスを作成
+1. **インデックス**: 頻繁に検索される`created_at`, `root_position`, `parent_node_id`, `child_node_id`, `username`, `token`にインデックスを作成
 2. **カスケード削除**: 外部キー制約でノード削除時に関連も自動削除
 3. **position更新**: 並び替え時は該当の親の子ノードのみ更新
 
@@ -223,7 +336,7 @@ SELECT parent_node_id FROM ancestors;
 
 ## 今後の拡張予定
 
+- ユーザーごとのノード管理（マルチテナント化: `owner_id`の追加）
 - タグテーブル（`tags`）
 - ノード-タグ関連テーブル（`node_tags`）
-- ユーザーテーブル（`users`）
 - 権限管理テーブル（`permissions`）
