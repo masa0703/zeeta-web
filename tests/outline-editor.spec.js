@@ -234,12 +234,12 @@ test.describe('Outline Editor Functional Tests', () => {
         await page.waitForTimeout(2000);
 
         // Copy first node
-        await page.click('.tree-item:has-text("コピー元")');
+        await page.locator('.tree-item:has-text("コピー元")').first().click({ force: true });
         await page.keyboard.press('Control+c');
         await page.waitForTimeout(500);
 
         // Paste to second node
-        await page.click('.tree-item:has-text("ペースト先")');
+        await page.locator('.tree-item:has-text("ペースト先")').first().click({ force: true });
         await page.keyboard.press('Control+v');
         await page.waitForTimeout(2000);
 
@@ -248,8 +248,8 @@ test.describe('Outline Editor Functional Tests', () => {
         // So "コピー元" should now appear under "ペースト先" in the tree
 
         // Expand the parent to see the child
-        const expandIcon = page.locator('.tree-item:has-text("ペースト先")').locator('.toggle-icon');
-        if (await expandIcon.isVisible()) {
+        const expandIcon = page.locator('.tree-item:has-text("ペースト先")').locator('.toggle-icon').first();
+        if (await expandIcon.count() > 0) {
             await expandIcon.click();
             await page.waitForTimeout(500);
         }
@@ -310,21 +310,30 @@ test.describe('Outline Editor Functional Tests', () => {
         await page.click('#add-root-btn');
         await page.waitForTimeout(2000);
 
-        await page.click('.tree-item:has-text("子X")');
+        await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.keyboard.press('Control+c');
         await page.waitForTimeout(500);
 
-        await page.click('.tree-item:has-text("親A")');
+        await page.locator('.tree-item:has-text("親A")').first().click({ force: true });
         await page.keyboard.press('Control+v');
-        await page.waitForTimeout(2000);
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
 
         // Select child and verify parent display
-        await page.locator('.tree-item:has-text("子X")').first().click();
+        await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.waitForTimeout(500);
 
-        // Verify parent display area exists
-        const editorPanel = page.locator('#editor-panel');
-        await expect(editorPanel).toBeVisible();
+        // Verify parent section is visible
+        await expect(page.locator('.bg-purple-50')).toBeVisible();
+
+        // Verify header shows correct count
+        await expect(page.locator('text=親ノード (1)')).toBeVisible();
+
+        // Verify parent is listed
+        await expect(page.locator('.text-purple-700:has-text("親A")')).toBeVisible();
+
+        // Verify delete button exists
+        await expect(page.locator('.remove-parent-btn')).toHaveCount(1);
     });
 
     test('TC-FUNC-011: Parent node display (multiple parents)', async ({ page }) => {
@@ -350,34 +359,146 @@ test.describe('Outline Editor Functional Tests', () => {
         await page.waitForTimeout(2000);
 
         // Add child to first parent
-        await page.click('.tree-item:has-text("子X")');
+        await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.keyboard.press('Control+c');
         await page.waitForTimeout(500);
-        await page.click('.tree-item:has-text("親A")');
+        await page.locator('.tree-item:has-text("親A")').first().click({ force: true });
         await page.keyboard.press('Control+v');
-        await page.waitForTimeout(2000);
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
 
         // Add child to second parent
-        await page.locator('.tree-item:has-text("子X")').first().click();
+        await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.keyboard.press('Control+c');
         await page.waitForTimeout(500);
-        await page.click('.tree-item:has-text("親B")');
+        await page.locator('.tree-item:has-text("親B")').first().click({ force: true });
         await page.keyboard.press('Control+v');
-        await page.waitForTimeout(2000);
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
 
         // Select child and verify both parents are displayed
-        await page.locator('.tree-item:has-text("子X")').first().click();
+        await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.waitForTimeout(500);
 
+        // Verify parent section shows correct count
+        await expect(page.locator('text=親ノード (2)')).toBeVisible();
+
+        // Verify both parents are listed
+        await expect(page.locator('.text-purple-700:has-text("親A")')).toBeVisible();
+        await expect(page.locator('.text-purple-700:has-text("親B")')).toBeVisible();
+
+        // Verify two delete buttons exist
+        await expect(page.locator('.remove-parent-btn')).toHaveCount(2);
+    });
+
+    test('TC-FUNC-012: Parent deletion functionality', async ({ page }) => {
+        // Setup dialog handler for node creation AND confirmation
+        let dialogCount = 0;
+        page.on('dialog', async dialog => {
+            if (dialog.type() === 'prompt') {
+                dialogCount++;
+                const titles = ['親1', '親2', '子'];
+                const titleIndex = Math.floor((dialogCount - 1) / 2);
+                if (dialogCount % 2 === 1) {
+                    await dialog.accept(titles[titleIndex]);
+                } else {
+                    await dialog.accept('TestUser');
+                }
+            } else if (dialog.type() === 'confirm' && dialog.message().includes('親子関係')) {
+                await dialog.accept();
+            }
+        });
+
+        // Create three nodes
+        await page.click('#add-root-btn');
+        await page.waitForTimeout(2000);
+        await page.click('#add-root-btn');
+        await page.waitForTimeout(2000);
+        await page.click('#add-root-btn');
+        await page.waitForTimeout(2000);
+
+        // Create relationship: 子 -> 親1
+        await page.locator('.tree-item:has-text("子")').first().click({ force: true });
+        await page.keyboard.press('Control+c');
+        await page.waitForTimeout(500);
+        await page.locator('.tree-item:has-text("親1")').first().click({ force: true });
+        await page.keyboard.press('Control+v');
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
+
+        // Create relationship: 子 -> 親2
+        await page.locator('.tree-item:has-text("子")').first().click({ force: true });
+        await page.keyboard.press('Control+c');
+        await page.waitForTimeout(500);
+        await page.locator('.tree-item:has-text("親2")').first().click({ force: true });
+        await page.keyboard.press('Control+v');
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
+
+        // Select child and verify 2 parents
+        await page.locator('.tree-item:has-text("子")').first().click({ force: true });
+        await page.waitForTimeout(500);
+        await expect(page.locator('text=親ノード (2)')).toBeVisible();
+        await expect(page.locator('.remove-parent-btn')).toHaveCount(2);
+
+        // Delete one parent
+        await page.locator('.remove-parent-btn').first().click();
+        await page.waitForTimeout(2000);
+
+        // Verify only 1 parent remains
+        await expect(page.locator('text=親ノード (1)')).toBeVisible();
+        await expect(page.locator('.remove-parent-btn')).toHaveCount(1);
+    });
+
+    test('TC-FUNC-013: Last parent deletion (becomes root node)', async ({ page }) => {
+        // Setup dialog handler
+        let dialogCount = 0;
+        page.on('dialog', async dialog => {
+            if (dialog.type() === 'prompt') {
+                dialogCount++;
+                const titles = ['親', '子'];
+                const titleIndex = Math.floor((dialogCount - 1) / 2);
+                if (dialogCount % 2 === 1) {
+                    await dialog.accept(titles[titleIndex]);
+                } else {
+                    await dialog.accept('TestUser');
+                }
+            } else if (dialog.type() === 'confirm' && dialog.message().includes('親子関係')) {
+                await dialog.accept();
+            }
+        });
+
+        // Create parent and child
+        await page.click('#add-root-btn');
+        await page.waitForTimeout(2000);
+        await page.click('#add-root-btn');
+        await page.waitForTimeout(2000);
+
+        // Create relationship: 子 -> 親
+        await page.locator('.tree-item:has-text("子")').first().click({ force: true });
+        await page.keyboard.press('Control+c');
+        await page.waitForTimeout(500);
+        await page.locator('.tree-item:has-text("親")').first().click({ force: true });
+        await page.keyboard.press('Control+v');
+        await page.waitForSelector('text=親子関係を追加しました', { timeout: 5000 });
+        await page.waitForTimeout(1000);
+
+        // Select child and verify parent is displayed
+        await page.locator('.tree-item:has-text("子")').first().click({ force: true });
+        await page.waitForTimeout(500);
+        await expect(page.locator('text=親ノード (1)')).toBeVisible();
+        await expect(page.locator('.remove-parent-btn')).toHaveCount(1);
+
+        // Delete the last parent
+        await page.locator('.remove-parent-btn').first().click();
+        await page.waitForTimeout(2000);
+
+        // Verify node became root node (parent section not visible)
+        await expect(page.locator('.bg-purple-50')).not.toBeVisible();
+
+        // Verify node is still selected and editable
         const editorPanel = page.locator('#editor-panel');
         await expect(editorPanel).toBeVisible();
-    });
-
-    test.skip('TC-FUNC-012: Parent deletion functionality', async ({ page }) => {
-        // TODO: Implement after parent display UI is complete
-    });
-
-    test.skip('TC-FUNC-013: Last parent deletion (becomes root node)', async ({ page }) => {
-        // TODO: Implement after parent display UI is complete
+        await expect(page.locator('#node-title')).toHaveValue('子');
     });
 });
