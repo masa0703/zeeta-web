@@ -70,6 +70,7 @@
 | PATCH    | `/api/relations/:parent_id/:child_id/position` | リレーション位置更新 |
 | PATCH    | `/api/nodes/:id/root-position`                 | ルート位置更新       |
 | GET      | `/api/search?q=検索語`                         | 検索                 |
+| DELETE   | `/api/test/clear`                              | テスト用全データクリア |
 
 ### 主要API詳細
 
@@ -86,6 +87,13 @@
 - リクエストボディ: `{parent_node_id, child_node_id}`
 - 循環参照チェックを実施
 - 位置は自動計算（親の最後に追加）
+
+#### テスト用全データクリア (DELETE /api/test/clear)
+- テスト実行時にデータベースをクリーンな状態にリセット
+- `node_relations`テーブルと`nodes`テーブルの全データを削除
+- `sqlite_sequence`のauto_incrementカウンターをリセット
+- レスポンス: `{success: true, message: 'All data cleared'}`
+- **注意**: 本番環境では使用禁止（テスト専用）
 
 ## フロントエンド構造
 
