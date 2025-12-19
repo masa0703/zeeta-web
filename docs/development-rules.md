@@ -60,3 +60,15 @@
 - **原因**: 前のテストのデータがクリアされていない
 - **解決**: beforeEachフックで`DELETE /api/test/clear`を呼び出す
 - **確認**: ビルド後のコードに反映されているか確認（`npm run build`実行）
+
+#### フロントエンドの変更が反映されない場合
+- **原因**: `src/index.tsx`の変更はビルドが必要
+- **解決**: `npm run build`を実行してサーバー再起動
+- **ファイル別の対応**:
+  - `public/static/app.js` → すぐ反映（静的ファイル、リロードのみ）
+  - `src/index.tsx` → ビルド + サーバー再起動が必要
+- **コマンド**:
+  ```bash
+  npm run build
+  # サーバーを再起動（Ctrl+C して npm run dev:sandbox）
+  ```

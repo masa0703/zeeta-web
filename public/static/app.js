@@ -545,7 +545,7 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
 
   let html = `
     <div class="tree-node-wrapper" data-node-group="${node.id}">
-      <div class="tree-item flex items-center py-2 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
+      <div class="tree-item flex items-center py-0 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
            style="padding-left: ${indent + 8}px"
            data-node-id="${node.id}"
            data-node-path="${currentPath}">

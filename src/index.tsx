@@ -443,6 +443,7 @@ app.get('/', (c) => {
           .tree-item {
             cursor: move;
             user-select: none;
+            line-height: 1.2;
           }
           .tree-item:hover {
             background-color: #f3f4f6;
