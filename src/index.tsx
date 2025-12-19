@@ -36,7 +36,7 @@ app.get('/api/version', (c) => {
 app.get('/api/nodes', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM nodes ORDER BY created_at'
+      'SELECT * FROM nodes ORDER BY root_position, created_at'
     ).all()
     return c.json({ success: true, data: results })
   } catch (error) {
