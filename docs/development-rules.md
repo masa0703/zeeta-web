@@ -19,3 +19,44 @@
 ### 4. テストが全てpassした時点で完了とする
 - 全てのテストケースがパスして初めて、タスク完了とみなします
 - テストが失敗している状態では、タスクは未完了です
+
+## デバッグガイド
+
+### テスト失敗時のチェックリスト（優先順位順）
+
+1. **サーバーログを最初に確認する**
+   - 開発サーバーのログに500エラーが出ていないか確認
+   - APIエンドポイントのエラーログを確認
+   - ログの場所: `/tmp/claude/-Users-masaharu-mikami-Documents-cloude-code-zeeta-web/tasks/*.output`
+   - コマンド例: `tail -100 /tmp/claude/-Users-masaharu-mikami-Documents-cloude-code-zeeta-web/tasks/[task-id].output`
+
+2. **データベースの状態を確認する**
+   - テーブルが正しく存在するか確認
+   - コマンド例: `sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite "SELECT name FROM sqlite_master WHERE type='table';"`
+
+3. **クライアント側のエラーメッセージを確認する**
+   - ブラウザのコンソールログ
+   - Playwrightのエラーメッセージ
+
+4. **テストコードのロジックを確認する**
+   - ダイアログハンドラーの登録タイミング
+   - waitForTimeoutの値
+   - セレクターの正確性
+
+### よくある問題と解決方法
+
+#### APIが500エラーを返す場合
+- **原因**: データベーステーブルが存在しない、またはスキーマが不正
+- **解決**: マイグレーションを実行してテーブルを再作成
+- **コマンド**:
+  ```bash
+  rm -rf .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite*
+  for i in migrations/*.sql; do
+    sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/[db-file].sqlite < "$i"
+  done
+  ```
+
+#### テスト間でデータが干渉する場合
+- **原因**: 前のテストのデータがクリアされていない
+- **解決**: beforeEachフックで`DELETE /api/test/clear`を呼び出す
+- **確認**: ビルド後のコードに反映されているか確認（`npm run build`実行）

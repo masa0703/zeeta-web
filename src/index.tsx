@@ -285,6 +285,22 @@ app.delete('/api/relations/:parent_id/:child_id', async (c) => {
   }
 })
 
+// テスト用: 全データクリア
+app.delete('/api/test/clear', async (c) => {
+  try {
+    // リレーションを全削除
+    await c.env.DB.prepare('DELETE FROM node_relations').run()
+    // ノードを全削除
+    await c.env.DB.prepare('DELETE FROM nodes').run()
+    // auto_incrementをリセット
+    await c.env.DB.prepare('DELETE FROM sqlite_sequence WHERE name IN ("nodes", "node_relations")').run()
+
+    return c.json({ success: true, message: 'All data cleared' })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // 循環参照チェック関数
 async function checkCircularReference(db: D1Database, parentId: number, childId: number): Promise<boolean> {
   // childIdがparentIdの祖先かどうかをチェック

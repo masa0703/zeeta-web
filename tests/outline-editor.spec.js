@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Outline Editor Functional Tests', () => {
     test.beforeEach(async ({ page }) => {
+        // Clear all test data before each test
+        await page.request.delete('http://localhost:3000/api/test/clear');
         await page.goto('/');
     });
 
@@ -291,10 +293,11 @@ test.describe('Outline Editor Functional Tests', () => {
 
     test('TC-FUNC-010: Parent node display (single parent)', async ({ page }) => {
         // Create parent and child nodes
+        const titles = ['親A', '子X'];
         let dialogCount = 0;
+
         page.on('dialog', async dialog => {
             dialogCount++;
-            const titles = ['親A', '子X'];
             const titleIndex = Math.floor((dialogCount - 1) / 2);
             if (dialogCount % 2 === 1) {
                 await dialog.accept(titles[titleIndex]);
@@ -304,11 +307,17 @@ test.describe('Outline Editor Functional Tests', () => {
         });
 
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
+
+        // Verify first node created
+        await expect(page.locator('.tree-item:has-text("親A")').first()).toBeVisible();
 
         // Add child via copy/paste
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
+
+        // Verify second node created
+        await expect(page.locator('.tree-item:has-text("子X")').first()).toBeVisible();
 
         await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
         await page.keyboard.press('Control+c');
@@ -338,10 +347,11 @@ test.describe('Outline Editor Functional Tests', () => {
 
     test('TC-FUNC-011: Parent node display (multiple parents)', async ({ page }) => {
         // Create nodes
+        const titles = ['親A', '親B', '子X'];
         let dialogCount = 0;
+
         page.on('dialog', async dialog => {
             dialogCount++;
-            const titles = ['親A', '親B', '子X'];
             const titleIndex = Math.floor((dialogCount - 1) / 2);
             if (dialogCount % 2 === 1) {
                 await dialog.accept(titles[titleIndex]);
@@ -352,11 +362,11 @@ test.describe('Outline Editor Functional Tests', () => {
 
         // Create three root nodes
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
 
         // Add child to first parent
         await page.locator('.tree-item:has-text("子X")').first().click({ force: true });
@@ -393,11 +403,12 @@ test.describe('Outline Editor Functional Tests', () => {
 
     test('TC-FUNC-012: Parent deletion functionality', async ({ page }) => {
         // Setup dialog handler for node creation AND confirmation
+        const titles = ['親1', '親2', '子'];
         let dialogCount = 0;
+
         page.on('dialog', async dialog => {
             if (dialog.type() === 'prompt') {
                 dialogCount++;
-                const titles = ['親1', '親2', '子'];
                 const titleIndex = Math.floor((dialogCount - 1) / 2);
                 if (dialogCount % 2 === 1) {
                     await dialog.accept(titles[titleIndex]);
@@ -411,11 +422,11 @@ test.describe('Outline Editor Functional Tests', () => {
 
         // Create three nodes
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
 
         // Create relationship: 子 -> 親1
         await page.locator('.tree-item:has-text("子")').first().click({ force: true });
@@ -452,11 +463,12 @@ test.describe('Outline Editor Functional Tests', () => {
 
     test('TC-FUNC-013: Last parent deletion (becomes root node)', async ({ page }) => {
         // Setup dialog handler
+        const titles = ['親', '子'];
         let dialogCount = 0;
+
         page.on('dialog', async dialog => {
             if (dialog.type() === 'prompt') {
                 dialogCount++;
-                const titles = ['親', '子'];
                 const titleIndex = Math.floor((dialogCount - 1) / 2);
                 if (dialogCount % 2 === 1) {
                     await dialog.accept(titles[titleIndex]);
@@ -470,9 +482,9 @@ test.describe('Outline Editor Functional Tests', () => {
 
         // Create parent and child
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
         await page.click('#add-root-btn');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
 
         // Create relationship: 子 -> 親
         await page.locator('.tree-item:has-text("子")').first().click({ force: true });
