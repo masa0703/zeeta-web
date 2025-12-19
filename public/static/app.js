@@ -113,10 +113,13 @@ async function addRelation(parentId, childId) {
     }
   } catch (error) {
     console.error('Failed to add relation:', error)
+    console.error('Error details:', error.response?.data)
     if (error.response?.data?.error === 'Circular reference detected') {
       showToast('循環参照です。この操作はできません。', 'error')
     } else if (error.response?.data?.error === 'Relation already exists') {
       showToast('この親子関係はすでに存在します', 'error')
+    } else if (error.response?.data?.error) {
+      showToast(`親子関係の追加に失敗: ${error.response.data.error}`, 'error')
     } else {
       showToast('親子関係の追加に失敗しました', 'error')
     }
@@ -1390,6 +1393,8 @@ async function handlePaste(e) {
     }
 
     e.preventDefault()
+
+    console.log('Pasting node:', { parent: selectedNodeId, child: clipboard })
 
     // clipboardのノードをselectedNodeIdの子として追加
     const success = await addRelation(selectedNodeId, clipboard)

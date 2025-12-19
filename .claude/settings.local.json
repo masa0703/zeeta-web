@@ -6,7 +6,11 @@
       "Bash(open playwright-report/index.html)",
       "Bash(npx playwright test:*)",
       "Bash(ls:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(npm run dev:sandbox:*)",
+      "Bash(curl:*)"
     ]
   }
 }

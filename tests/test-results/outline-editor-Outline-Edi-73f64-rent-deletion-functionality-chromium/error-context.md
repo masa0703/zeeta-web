@@ -1,0 +1,503 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - 'heading " Zeeta Web build #72" [level=2] [ref=e6]':
+          - generic [ref=e7]: 
+          - generic [ref=e8]: Zeeta Web
+          - generic [ref=e9]: "build #72"
+        - button "+ ルート追加" [active] [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: +
+          - text: ルート追加
+      - generic [ref=e13]:
+        - textbox "検索..." [ref=e14]
+        - generic [ref=e15]: 
+        - text: 
+      - generic [ref=e17]:
+        - button " 通常" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 
+          - text: 通常
+        - button " 逆ツリー" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]: 
+          - text: 逆ツリー
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: 
+          - generic [ref=e27]: 
+          - generic [ref=e28]: 
+          - generic [ref=e29]: プロジェクト計画
+          - button "+" [ref=e30] [cursor=pointer]:
+            - generic [ref=e31]: +
+        - generic:
+          - generic [ref=e33]:
+            - generic [ref=e34]: 
+            - generic [ref=e35]: 
+            - generic [ref=e36]: 目標
+            - button "+" [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]: +
+          - generic [ref=e39]:
+            - generic [ref=e40]:
+              - generic [ref=e41]: 
+              - generic [ref=e42]: 
+              - generic [ref=e43]: 
+              - generic [ref=e44]: タスクリスト
+              - button "+" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]: +
+            - generic:
+              - generic [ref=e48]:
+                - generic [ref=e49]: 
+                - generic [ref=e50]: 
+                - generic [ref=e51]: デザイン
+                - button "+" [ref=e52] [cursor=pointer]:
+                  - generic [ref=e53]: +
+              - generic [ref=e55]:
+                - generic [ref=e56]: 
+                - generic [ref=e57]: 
+                - generic [ref=e58]: 実装
+                - button "+" [ref=e59] [cursor=pointer]:
+                  - generic [ref=e60]: +
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]: 
+          - generic [ref=e64]: 
+          - generic [ref=e65]: 
+          - generic [ref=e66]: ノード1
+          - button "+" [ref=e67] [cursor=pointer]:
+            - generic [ref=e68]: +
+        - generic:
+          - generic [ref=e70]:
+            - generic [ref=e71]: 
+            - generic [ref=e72]: 
+            - generic [ref=e73]: テストノード
+            - button "+" [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]: +
+          - generic [ref=e77]:
+            - generic [ref=e78]: 
+            - generic [ref=e79]: 
+            - generic [ref=e80]: 更新タイトル
+            - generic "複数の親を持つノード" [ref=e81]:
+              - generic [ref=e82]: 
+              - text: "2"
+            - button "+" [ref=e83] [cursor=pointer]:
+              - generic [ref=e84]: +
+      - generic [ref=e86]:
+        - generic [ref=e87]: 
+        - generic [ref=e88]: 
+        - generic [ref=e89]: テストノード
+        - button "+" [ref=e90] [cursor=pointer]:
+          - generic [ref=e91]: +
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - generic [ref=e94]: 
+          - generic [ref=e95]: 
+          - generic [ref=e96]: 
+          - generic [ref=e97]: ルート1
+          - button "+" [ref=e98] [cursor=pointer]:
+            - generic [ref=e99]: +
+        - generic [ref=e101]:
+          - generic [ref=e102]: 
+          - generic [ref=e103]: 
+          - generic [ref=e104]: 更新タイトル
+          - generic "複数の親を持つノード" [ref=e105]:
+            - generic [ref=e106]: 
+            - text: "2"
+          - button "+" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]: +
+      - generic [ref=e110]:
+        - generic [ref=e111]: 
+        - generic [ref=e112]: 
+        - generic [ref=e113]: 親ノード
+        - button "+" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115]: +
+      - generic [ref=e117]:
+        - generic [ref=e118]: 
+        - generic [ref=e119]: 
+        - generic [ref=e120]: 検索テストノード
+        - button "+" [ref=e121] [cursor=pointer]:
+          - generic [ref=e122]: +
+      - generic [ref=e124]:
+        - generic [ref=e125]: 
+        - generic [ref=e126]: 
+        - generic [ref=e127]: ノード1
+        - button "+" [ref=e128] [cursor=pointer]:
+          - generic [ref=e129]: +
+      - generic [ref=e131]:
+        - generic [ref=e132]: 
+        - generic [ref=e133]: 
+        - generic [ref=e134]: ノード2
+        - button "+" [ref=e135] [cursor=pointer]:
+          - generic [ref=e136]: +
+      - generic [ref=e138]:
+        - generic [ref=e139]: 
+        - generic [ref=e140]: 
+        - generic [ref=e141]: テストノード
+        - button "+" [ref=e142] [cursor=pointer]:
+          - generic [ref=e143]: +
+      - generic [ref=e145]:
+        - generic [ref=e146]: 
+        - generic [ref=e147]: 
+        - generic [ref=e148]: ルート1
+        - button "+" [ref=e149] [cursor=pointer]:
+          - generic [ref=e150]: +
+      - generic [ref=e152]:
+        - generic [ref=e153]: 
+        - generic [ref=e154]: 
+        - generic [ref=e155]: 更新タイトル
+        - button "+" [ref=e156] [cursor=pointer]:
+          - generic [ref=e157]: +
+      - generic [ref=e159]:
+        - generic [ref=e160]: 
+        - generic [ref=e161]: 
+        - generic [ref=e162]: 親ノード
+        - button "+" [ref=e163] [cursor=pointer]:
+          - generic [ref=e164]: +
+      - generic [ref=e166]:
+        - generic [ref=e167]: 
+        - generic [ref=e168]: 
+        - generic [ref=e169]: 検索テストノード
+        - button "+" [ref=e170] [cursor=pointer]:
+          - generic [ref=e171]: +
+      - generic [ref=e173]:
+        - generic [ref=e174]: 
+        - generic [ref=e175]: 
+        - generic [ref=e176]: ノード1
+        - button "+" [ref=e177] [cursor=pointer]:
+          - generic [ref=e178]: +
+      - generic [ref=e180]:
+        - generic [ref=e181]: 
+        - generic [ref=e182]: 
+        - generic [ref=e183]: ノード2
+        - button "+" [ref=e184] [cursor=pointer]:
+          - generic [ref=e185]: +
+      - generic [ref=e187]:
+        - generic [ref=e188]: 
+        - generic [ref=e189]: 
+        - generic [ref=e190]: 更新タイトル
+        - button "+" [ref=e191] [cursor=pointer]:
+          - generic [ref=e192]: +
+      - generic [ref=e194]:
+        - generic [ref=e195]: 
+        - generic [ref=e196]: 
+        - generic [ref=e197]: テストノード
+        - button "+" [ref=e198] [cursor=pointer]:
+          - generic [ref=e199]: +
+      - generic [ref=e201]:
+        - generic [ref=e202]: 
+        - generic [ref=e203]: 
+        - generic [ref=e204]: ルート1
+        - button "+" [ref=e205] [cursor=pointer]:
+          - generic [ref=e206]: +
+      - generic [ref=e208]:
+        - generic [ref=e209]: 
+        - generic [ref=e210]: 
+        - generic [ref=e211]: 親ノード
+        - button "+" [ref=e212] [cursor=pointer]:
+          - generic [ref=e213]: +
+      - generic [ref=e215]:
+        - generic [ref=e216]: 
+        - generic [ref=e217]: 
+        - generic [ref=e218]: 検索テストノード
+        - button "+" [ref=e219] [cursor=pointer]:
+          - generic [ref=e220]: +
+      - generic [ref=e222]:
+        - generic [ref=e223]: 
+        - generic [ref=e224]: 
+        - generic [ref=e225]: ノード1
+        - button "+" [ref=e226] [cursor=pointer]:
+          - generic [ref=e227]: +
+      - generic [ref=e229]:
+        - generic [ref=e230]: 
+        - generic [ref=e231]: 
+        - generic [ref=e232]: ノード2
+        - button "+" [ref=e233] [cursor=pointer]:
+          - generic [ref=e234]: +
+      - generic [ref=e236]:
+        - generic [ref=e237]: 
+        - generic [ref=e238]: 
+        - generic [ref=e239]: ルート1
+        - button "+" [ref=e240] [cursor=pointer]:
+          - generic [ref=e241]: +
+      - generic [ref=e243]:
+        - generic [ref=e244]: 
+        - generic [ref=e245]: 
+        - generic [ref=e246]: テストノード
+        - button "+" [ref=e247] [cursor=pointer]:
+          - generic [ref=e248]: +
+      - generic [ref=e250]:
+        - generic [ref=e251]: 
+        - generic [ref=e252]: 
+        - generic [ref=e253]: 更新タイトル
+        - button "+" [ref=e254] [cursor=pointer]:
+          - generic [ref=e255]: +
+      - generic [ref=e257]:
+        - generic [ref=e258]: 
+        - generic [ref=e259]: 
+        - generic [ref=e260]: 親ノード
+        - button "+" [ref=e261] [cursor=pointer]:
+          - generic [ref=e262]: +
+      - generic [ref=e264]:
+        - generic [ref=e265]: 
+        - generic [ref=e266]: 
+        - generic [ref=e267]: 検索テストノード
+        - button "+" [ref=e268] [cursor=pointer]:
+          - generic [ref=e269]: +
+      - generic [ref=e271]:
+        - generic [ref=e272]: 
+        - generic [ref=e273]: 
+        - generic [ref=e274]: ノード1
+        - button "+" [ref=e275] [cursor=pointer]:
+          - generic [ref=e276]: +
+      - generic [ref=e278]:
+        - generic [ref=e279]: 
+        - generic [ref=e280]: 
+        - generic [ref=e281]: ノード2
+        - button "+" [ref=e282] [cursor=pointer]:
+          - generic [ref=e283]: +
+      - generic [ref=e285]:
+        - generic [ref=e286]: 
+        - generic [ref=e287]: 
+        - generic [ref=e288]: ルート1
+        - button "+" [ref=e289] [cursor=pointer]:
+          - generic [ref=e290]: +
+      - generic [ref=e292]:
+        - generic [ref=e293]: 
+        - generic [ref=e294]: 
+        - generic [ref=e295]: 更新タイトル
+        - button "+" [ref=e296] [cursor=pointer]:
+          - generic [ref=e297]: +
+      - generic [ref=e299]:
+        - generic [ref=e300]: 
+        - generic [ref=e301]: 
+        - generic [ref=e302]: テストノード
+        - button "+" [ref=e303] [cursor=pointer]:
+          - generic [ref=e304]: +
+      - generic [ref=e306]:
+        - generic [ref=e307]: 
+        - generic [ref=e308]: 
+        - generic [ref=e309]: 親ノード
+        - button "+" [ref=e310] [cursor=pointer]:
+          - generic [ref=e311]: +
+      - generic [ref=e313]:
+        - generic [ref=e314]: 
+        - generic [ref=e315]: 
+        - generic [ref=e316]: 検索テストノード
+        - button "+" [ref=e317] [cursor=pointer]:
+          - generic [ref=e318]: +
+      - generic [ref=e320]:
+        - generic [ref=e321]: 
+        - generic [ref=e322]: 
+        - generic [ref=e323]: ノード1
+        - button "+" [ref=e324] [cursor=pointer]:
+          - generic [ref=e325]: +
+      - generic [ref=e327]:
+        - generic [ref=e328]: 
+        - generic [ref=e329]: 
+        - generic [ref=e330]: ノード2
+        - button "+" [ref=e331] [cursor=pointer]:
+          - generic [ref=e332]: +
+      - generic [ref=e334]:
+        - generic [ref=e335]: 
+        - generic [ref=e336]: 
+        - generic [ref=e337]: テストノード
+        - button "+" [ref=e338] [cursor=pointer]:
+          - generic [ref=e339]: +
+      - generic [ref=e341]:
+        - generic [ref=e342]: 
+        - generic [ref=e343]: 
+        - generic [ref=e344]: ルート1
+        - button "+" [ref=e345] [cursor=pointer]:
+          - generic [ref=e346]: +
+      - generic [ref=e348]:
+        - generic [ref=e349]: 
+        - generic [ref=e350]: 
+        - generic [ref=e351]: 更新タイトル
+        - button "+" [ref=e352] [cursor=pointer]:
+          - generic [ref=e353]: +
+      - generic [ref=e355]:
+        - generic [ref=e356]: 
+        - generic [ref=e357]: 
+        - generic [ref=e358]: 親ノード
+        - button "+" [ref=e359] [cursor=pointer]:
+          - generic [ref=e360]: +
+      - generic [ref=e362]:
+        - generic [ref=e363]: 
+        - generic [ref=e364]: 
+        - generic [ref=e365]: 検索テストノード
+        - button "+" [ref=e366] [cursor=pointer]:
+          - generic [ref=e367]: +
+      - generic [ref=e369]:
+        - generic [ref=e370]: 
+        - generic [ref=e371]: 
+        - generic [ref=e372]: ノード1
+        - button "+" [ref=e373] [cursor=pointer]:
+          - generic [ref=e374]: +
+      - generic [ref=e376]:
+        - generic [ref=e377]: 
+        - generic [ref=e378]: 
+        - generic [ref=e379]: 親
+        - button "+" [ref=e380] [cursor=pointer]:
+          - generic [ref=e381]: +
+      - generic [ref=e383]:
+        - generic [ref=e384]: 
+        - generic [ref=e385]: 
+        - generic [ref=e386]: ノード2
+        - button "+" [ref=e387] [cursor=pointer]:
+          - generic [ref=e388]: +
+      - generic [ref=e389]:
+        - generic [ref=e390]:
+          - generic [ref=e391]: 
+          - generic [ref=e392]: 
+          - generic [ref=e393]: 
+          - generic [ref=e394]: ペースト先
+          - button "+" [ref=e395] [cursor=pointer]:
+            - generic [ref=e396]: +
+        - generic [ref=e398]:
+          - generic [ref=e399]: 
+          - generic [ref=e400]: 
+          - generic [ref=e401]: コピー元
+          - button "+" [ref=e402] [cursor=pointer]:
+            - generic [ref=e403]: +
+      - generic [ref=e404]:
+        - generic [ref=e405]:
+          - generic [ref=e406]: 
+          - generic [ref=e407]: 
+          - generic [ref=e408]: 
+          - generic [ref=e409]: 親A
+          - button "+" [ref=e410] [cursor=pointer]:
+            - generic [ref=e411]: +
+        - generic [ref=e413]:
+          - generic [ref=e414]: 
+          - generic [ref=e415]: 
+          - generic [ref=e416]: 子X
+          - button "+" [ref=e417] [cursor=pointer]:
+            - generic [ref=e418]: +
+      - generic [ref=e420]:
+        - generic [ref=e421]: 
+        - generic [ref=e422]: 
+        - generic [ref=e423]: 親A
+        - button "+" [ref=e424] [cursor=pointer]:
+          - generic [ref=e425]: +
+      - generic [ref=e427]:
+        - generic [ref=e428]: 
+        - generic [ref=e429]: 
+        - generic [ref=e430]: 親B
+        - button "+" [ref=e431] [cursor=pointer]:
+          - generic [ref=e432]: +
+      - generic [ref=e434]:
+        - generic [ref=e435]: 
+        - generic [ref=e436]: 
+        - generic [ref=e437]: 子X
+        - button "+" [ref=e438] [cursor=pointer]:
+          - generic [ref=e439]: +
+      - generic [ref=e441]:
+        - generic [ref=e442]: 
+        - generic [ref=e443]: 
+        - generic [ref=e444]: テストノード
+        - button "+" [ref=e445] [cursor=pointer]:
+          - generic [ref=e446]: +
+      - generic [ref=e448]:
+        - generic [ref=e449]: 
+        - generic [ref=e450]: 
+        - generic [ref=e451]: 編集テスト
+        - button "+" [ref=e452] [cursor=pointer]:
+          - generic [ref=e453]: +
+      - generic [ref=e455]:
+        - generic [ref=e456]: 
+        - generic [ref=e457]: 
+        - generic [ref=e458]: ルート1
+        - button "+" [ref=e459] [cursor=pointer]:
+          - generic [ref=e460]: +
+      - generic [ref=e462]:
+        - generic [ref=e463]: 
+        - generic [ref=e464]: 
+        - generic [ref=e465]: 親ノード
+        - button "+" [ref=e466] [cursor=pointer]:
+          - generic [ref=e467]: +
+      - generic [ref=e469]:
+        - generic [ref=e470]: 
+        - generic [ref=e471]: 
+        - generic [ref=e472]: 検索テストノード
+        - button "+" [ref=e473] [cursor=pointer]:
+          - generic [ref=e474]: +
+      - generic [ref=e476]:
+        - generic [ref=e477]: 
+        - generic [ref=e478]: 
+        - generic [ref=e479]: ノード1
+        - button "+" [ref=e480] [cursor=pointer]:
+          - generic [ref=e481]: +
+      - generic [ref=e483]:
+        - generic [ref=e484]: 
+        - generic [ref=e485]: 
+        - generic [ref=e486]: コピー元
+        - button "+" [ref=e487] [cursor=pointer]:
+          - generic [ref=e488]: +
+      - generic [ref=e490]:
+        - generic [ref=e491]: 
+        - generic [ref=e492]: 
+        - generic [ref=e493]: 親
+        - button "+" [ref=e494] [cursor=pointer]:
+          - generic [ref=e495]: +
+      - generic [ref=e497]:
+        - generic [ref=e498]: 
+        - generic [ref=e499]: 
+        - generic [ref=e500]: ノード2
+        - button "+" [ref=e501] [cursor=pointer]:
+          - generic [ref=e502]: +
+      - generic [ref=e504]:
+        - generic [ref=e505]: 
+        - generic [ref=e506]: 
+        - generic [ref=e507]: ペースト先
+        - button "+" [ref=e508] [cursor=pointer]:
+          - generic [ref=e509]: +
+      - generic [ref=e511]:
+        - generic [ref=e512]: 
+        - generic [ref=e513]: 
+        - generic [ref=e514]: 親A
+        - button "+" [ref=e515] [cursor=pointer]:
+          - generic [ref=e516]: +
+      - generic [ref=e518]:
+        - generic [ref=e519]: 
+        - generic [ref=e520]: 
+        - generic [ref=e521]: 親A
+        - button "+" [ref=e522] [cursor=pointer]:
+          - generic [ref=e523]: +
+      - generic [ref=e525]:
+        - generic [ref=e526]: 
+        - generic [ref=e527]: 
+        - generic [ref=e528]: 子X
+        - button "+" [ref=e529] [cursor=pointer]:
+          - generic [ref=e530]: +
+      - generic [ref=e532]:
+        - generic [ref=e533]: 
+        - generic [ref=e534]: 
+        - generic [ref=e535]: 親B
+        - button "+" [ref=e536] [cursor=pointer]:
+          - generic [ref=e537]: +
+      - generic [ref=e539]:
+        - generic [ref=e540]: 
+        - generic [ref=e541]: 
+        - generic [ref=e542]: 子X
+        - button "+" [ref=e543] [cursor=pointer]:
+          - generic [ref=e544]: +
+      - generic [ref=e545]:
+        - generic [ref=e546]:
+          - generic [ref=e547]: 
+          - generic [ref=e548]: 
+          - generic [ref=e549]: 
+          - generic [ref=e550]: アイデアメモ
+          - button "+" [ref=e551] [cursor=pointer]:
+            - generic [ref=e552]: +
+        - generic [ref=e554]:
+          - generic [ref=e555]: 
+          - generic [ref=e556]: 
+          - generic [ref=e557]: 機能追加案
+          - button "+" [ref=e558] [cursor=pointer]:
+            - generic [ref=e559]: +
+  - generic [ref=e563]:
+    - generic [ref=e564]: 
+    - paragraph [ref=e565]: 左側のノードを選択してください
+```
