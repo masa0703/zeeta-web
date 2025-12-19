@@ -16,6 +16,7 @@
 - **[design.md](./design.md)**: アーキテクチャ概要、全体設計
 - **[database-schema.md](./database-schema.md)**: データベーススキーマ詳細
 - **[api-specification.md](./api-specification.md)**: REST API仕様
+- **[ui-specification.md](./ui-specification.md)**: UI画面定義、インタラクション仕様
 - **[test-cases.md](./test-cases.md)**: テストケース仕様
 - **[development-rules.md](./development-rules.md)**: 開発ルールとガイドライン（本ファイル）
 
