@@ -52,51 +52,15 @@
 - position: INTEGER (同一親内での順序)
 ```
 
-## API仕様
+## API
 
-### エンドポイント一覧
+REST APIの詳細仕様は [api-specification.md](./api-specification.md) を参照してください。
 
-| メソッド | パス                                           | 説明                 |
-| -------- | ---------------------------------------------- | -------------------- |
-| GET      | `/api/version`                                 | バージョン情報取得   |
-| GET      | `/api/nodes`                                   | 全ノード取得         |
-| GET      | `/api/nodes/:id`                               | 特定ノード取得       |
-| GET      | `/api/nodes/:id/children`                      | 子ノード取得         |
-| GET      | `/api/nodes/:id/parents`                       | 親ノード取得         |
-| GET      | `/api/nodes/root/list`                         | ルートノード取得     |
-| GET      | `/api/relations`                               | 全リレーション取得   |
-| POST     | `/api/nodes`                                   | ノード作成           |
-| PUT      | `/api/nodes/:id`                               | ノード更新           |
-| DELETE   | `/api/nodes/:id`                               | ノード削除           |
-| POST     | `/api/relations`                               | 親子関係追加         |
-| DELETE   | `/api/relations/:parent_id/:child_id`          | 親子関係削除         |
-| PATCH    | `/api/relations/:parent_id/:child_id/position` | リレーション位置更新 |
-| PATCH    | `/api/nodes/:id/root-position`                 | ルート位置更新       |
-| GET      | `/api/search?q=検索語`                         | 検索                 |
-| DELETE   | `/api/test/clear`                              | テスト用全データクリア |
-
-### 主要API詳細
-
-#### ノード作成 (POST /api/nodes)
-- リクエストボディ: `{title, content?, author, root_position?}`
-- 必須フィールド: title, author
-- root_position未指定時は自動計算
-
-#### ノード更新 (PUT /api/nodes/:id)
-- リクエストボディ: `{title?, content?, author?}`
-- 部分更新可能
-
-#### 親子関係追加 (POST /api/relations)
-- リクエストボディ: `{parent_node_id, child_node_id}`
-- 循環参照チェックを実施
-- 位置は自動計算（親の最後に追加）
-
-#### テスト用全データクリア (DELETE /api/test/clear)
-- テスト実行時にデータベースをクリーンな状態にリセット
-- `node_relations`テーブルと`nodes`テーブルの全データを削除
-- `sqlite_sequence`のauto_incrementカウンターをリセット
-- レスポンス: `{success: true, message: 'All data cleared'}`
-- **注意**: 本番環境では使用禁止（テスト専用）
+**主要エンドポイント**:
+- ノード管理: `GET/POST/PUT/DELETE /api/nodes`
+- 親子関係: `POST/DELETE /api/relations`
+- 検索: `GET /api/search`
+- テスト用: `DELETE /api/test/clear`
 
 ## フロントエンド構造
 
