@@ -29,28 +29,11 @@
 
 ## データモデル
 
-### nodes テーブル
-```sql
-- id: INTEGER (主キー, 自動採番)
-- title: TEXT (ノードのタイトル)
-- content: TEXT (ノードの内容)
-- author: TEXT (作成者名)
-- created_at: DATETIME (作成日時)
-- updated_at: DATETIME (更新日時)
-- root_position: INTEGER (ルートノードの表示順序, デフォルト: 0)
-```
+データベーススキーマの詳細仕様は [database-schema.md](./database-schema.md) を参照してください。
 
-**注記**:
-- `parent_id`と`position`カラムは削除済み（マイグレーション0003で削除）
-- 親子関係は`node_relations`テーブルで管理
-- ルートノード（親を持たないノード）の順序は`root_position`で管理
-
-### node_relations テーブル
-```sql
-- parent_node_id: INTEGER (親ノードID)
-- child_node_id: INTEGER (子ノードID)
-- position: INTEGER (同一親内での順序)
-```
+**主要テーブル**:
+- `nodes`: ノードの基本情報（タイトル、内容、作成者など）
+- `node_relations`: ノード間の親子関係（多対多関係をサポート）
 
 ## API
 
