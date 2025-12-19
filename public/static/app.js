@@ -1252,7 +1252,7 @@ async function addRootNode() {
       title: title.trim(),
       content: '',
       author: author.trim(),
-      position: 0
+      root_position: 0
     })
 
     if (node) {
@@ -1277,8 +1277,7 @@ async function addChildNode(parentId) {
     const node = await createNode({
       title: title.trim(),
       content: '',
-      author: author.trim(),
-      position: 0
+      author: author.trim()
     })
 
     if (node) {
