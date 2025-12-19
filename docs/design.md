@@ -32,15 +32,18 @@
 ### nodes テーブル
 ```sql
 - id: INTEGER (主キー, 自動採番)
-- parent_id: INTEGER (親ノードのID、NULL = ルートノード) ※ 非推奨、node_relations使用
 - title: TEXT (ノードのタイトル)
 - content: TEXT (ノードの内容)
 - author: TEXT (作成者名)
 - created_at: DATETIME (作成日時)
 - updated_at: DATETIME (更新日時)
-- position: INTEGER (表示順序) ※ 非推奨、node_relations使用
-- root_position: INTEGER (ルートノードの表示順序)
+- root_position: INTEGER (ルートノードの表示順序, デフォルト: 0)
 ```
+
+**注記**:
+- `parent_id`と`position`カラムは削除済み（マイグレーション0003で削除）
+- 親子関係は`node_relations`テーブルで管理
+- ルートノード（親を持たないノード）の順序は`root_position`で管理
 
 ### node_relations テーブル
 ```sql
