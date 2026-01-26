@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
+import { setCookie, getCookie } from 'hono/cookie'
 import { getOAuthConfig, normalizeGoogleUser, normalizeGitHubUser, OAuthUserInfo } from './config/oauth'
 import { generateJWT } from './utils/jwt'
 import { upsertOAuthUser, createSession, deleteSession } from './utils/database'
@@ -38,6 +39,13 @@ app.use('/api/*', cors())
 // 静的ファイル配信
 app.use('/static/*', serveStatic({ root: './public' }))
 
+// HTMLファイル配信
+import loginHtml from '../public/login.html?raw'
+import myPageHtml from '../public/my-page.html?raw'
+
+app.get('/login.html', (c) => c.html(loginHtml))
+app.get('/my-page.html', (c) => c.html(myPageHtml))
+
 // ===============================
 // API Routes
 // ===============================
@@ -71,10 +79,13 @@ app.get('/auth/login/:provider', (c) => {
   const state = crypto.randomUUID()
 
   // Store state in cookie (10 minutes expiration)
-  c.header(
-    'Set-Cookie',
-    `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Max-Age=600; Path=/`
-  )
+  setCookie(c, 'oauth_state', state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax',
+    maxAge: 600,
+    path: '/'
+  })
 
   // Build authorization URL
   const authUrl = new URL(config.authUrl)
@@ -99,7 +110,7 @@ app.get('/auth/callback/:provider', async (c) => {
 
     const code = c.req.query('code')
     const state = c.req.query('state')
-    const savedState = c.req.cookie('oauth_state')
+    const savedState = getCookie(c, 'oauth_state')
 
     // Validate state (CSRF protection)
     if (!state || !savedState || state !== savedState) {
@@ -181,13 +192,22 @@ app.get('/auth/callback/:provider', async (c) => {
     await createSession(c.env.DB, user.id, token, 30 * 24 * 60 * 60) // 30 days
 
     // Set session cookie
-    c.header(
-      'Set-Cookie',
-      `session=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`
-    )
+    setCookie(c, 'session', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/'
+    })
 
     // Clear OAuth state cookie
-    c.header('Set-Cookie', 'oauth_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/')
+    setCookie(c, 'oauth_state', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 0,
+      path: '/'
+    })
 
     // Redirect to My Page
     return c.redirect('/my-page')
@@ -199,7 +219,7 @@ app.get('/auth/callback/:provider', async (c) => {
 
 // Logout
 app.post('/auth/logout', async (c) => {
-  const token = c.req.cookie('session')
+  const token = getCookie(c, 'session')
 
   if (token) {
     // Delete session from database
@@ -246,9 +266,12 @@ app.get('/auth/test-login', async (c) => {
   try {
     const userId = c.req.query('user_id') || '1'
     const testUserId = parseInt(userId)
+    const providerId = `test-${testUserId}`
 
-    // Get or create test user
-    let user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(testUserId).first()
+    // Get or create test user by oauth_provider and oauth_provider_id
+    let user = await c.env.DB.prepare(
+      'SELECT * FROM users WHERE oauth_provider = ? AND oauth_provider_id = ?'
+    ).bind('test', providerId).first()
 
     if (!user) {
       // Create test user
@@ -257,7 +280,7 @@ app.get('/auth/test-login', async (c) => {
          VALUES ('test', ?, ?, ?, NULL, CURRENT_TIMESTAMP)
          RETURNING *`
       )
-        .bind(`test-${testUserId}`, `test-user-${testUserId}@example.com`, `Test User ${testUserId}`)
+        .bind(providerId, `test-user-${testUserId}@example.com`, `Test User ${testUserId}`)
         .first()
     }
 
@@ -280,10 +303,13 @@ app.get('/auth/test-login', async (c) => {
     await createSession(c.env.DB, user.id, token, 30 * 24 * 60 * 60)
 
     // Set session cookie
-    c.header(
-      'Set-Cookie',
-      `session=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`
-    )
+    setCookie(c, 'session', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/'
+    })
 
     return c.redirect('/my-page.html')
   } catch (error) {
@@ -1450,8 +1476,8 @@ app.get('/api/search', async (c) => {
 // Frontend
 // ===============================
 
-app.get('/', (c) => {
-  return c.html(`
+// Editor HTML generator
+const getEditorHTML = () => `
     <!DOCTYPE html>
     <html lang="ja">
     <head>
@@ -1798,6 +1824,9 @@ app.get('/', (c) => {
         </style>
     </head>
     <body class="bg-gray-50">
+        <!-- Tree Header (populated by app.js) -->
+        <div id="tree-header"></div>
+
         <div class="flex h-screen" id="main-container">
             <!-- 左ペイン: ツリー表示 -->
             <div class="bg-white border-r border-gray-200 flex flex-col" id="tree-pane" style="width: 33.333%">
@@ -1868,7 +1897,12 @@ app.get('/', (c) => {
         <script src="/static/app.js"></script>
     </body>
     </html>
-  `)
-})
+  `
+
+// Root route - Editor
+app.get('/', (c) => c.html(getEditorHTML()))
+
+// /index.html route - Same as root
+app.get('/index.html', (c) => c.html(getEditorHTML()))
 
 export default app

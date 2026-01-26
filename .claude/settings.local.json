@@ -10,7 +10,14 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(npm run dev:sandbox:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(sqlite3:*)",
+      "Bash(open tests/playwright-report/index.html)",
+      "Bash(npm run build:*)",
+      "Bash(git mv:*)",
+      "Bash(/bin/sleep:*)"
     ]
   }
 }

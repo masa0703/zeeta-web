@@ -234,8 +234,9 @@ function updateTreeHeader() {
 function disableEditingForViewer() {
   // Disable all input fields and buttons related to editing
   const editControls = [
-    '#title-input',
-    '#content-input',
+    '#node-title',
+    '#node-content',
+    '#node-author',
     '#new-node-title',
     '#new-node-content',
     '#create-node-btn',

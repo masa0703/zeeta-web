@@ -11,16 +11,14 @@ import { test, expect } from '@playwright/test'
  * 5. Tree Isolation
  */
 
-const BASE_URL = 'http://localhost:8787'
-
 // Test helper functions
 async function testLogin(page, userId = 1) {
-  await page.goto(`${BASE_URL}/auth/test-login?user_id=${userId}`)
+  await page.goto(`/auth/test-login?user_id=${userId}`)
   await page.waitForURL('**/my-page.html')
 }
 
 async function clearTestData(page) {
-  await page.request.delete(`${BASE_URL}/api/test/clear`)
+  await page.request.delete('/api/test/clear')
 }
 
 async function createTestTree(page, name = 'Test Tree', description = 'Test Description') {
@@ -48,7 +46,7 @@ test.describe('Authentication Flow', () => {
   })
 
   test('TC-AUTH-001: Unauthenticated user redirect to login', async ({ page }) => {
-    await page.goto(`${BASE_URL}/my-page.html`)
+    await page.goto(`/my-page.html`)
 
     // Should redirect to login page
     await page.waitForURL('**/login.html', { timeout: 3000 })
@@ -86,7 +84,7 @@ test.describe('Authentication Flow', () => {
     await page.waitForURL('**/login.html')
 
     // Try to access My Page again
-    await page.goto(`${BASE_URL}/my-page.html`)
+    await page.goto(`/my-page.html`)
 
     // Should be redirected to login
     await page.waitForURL('**/login.html')
@@ -205,9 +203,10 @@ test.describe('Node Operations', () => {
     await page.waitForTimeout(1000)
 
     // Edit title
-    await page.fill('#title-input', '更新されたタイトル')
+    await page.fill('#node-title', '更新されたタイトル')
 
-    // Save (assuming auto-save or update button)
+    // Click save button
+    await page.click('#save-node-btn')
     await page.waitForTimeout(1000)
 
     // Verify updated title in tree view
@@ -282,7 +281,7 @@ test.describe('Permissions', () => {
 
     // Add user 2 as viewer via API
     const apiContext = context
-    await page.request.post(`${BASE_URL}/api/trees/${treeId}/members`, {
+    await page.request.post(`/api/trees/${treeId}/members`, {
       data: {
         user_id: 2,
         role: 'viewer'
@@ -297,8 +296,13 @@ test.describe('Permissions', () => {
     await testLogin(page, 2)
 
     // Navigate to the shared tree
-    await page.goto(`${BASE_URL}/index.html?tree=${treeId}`)
-    await page.waitForTimeout(1000)
+    await page.goto(`/index.html?tree=${treeId}`)
+
+    // Wait for tree header to be populated
+    await page.waitForFunction(() => {
+      const header = document.getElementById('tree-header')
+      return header && header.innerHTML.trim() !== ''
+    }, { timeout: 10000 })
 
     // Verify viewer badge is displayed
     await expect(page.locator('#tree-header')).toContainText('閲覧者')
@@ -320,7 +324,7 @@ test.describe('Permissions', () => {
     const treeId = url.searchParams.get('tree')
 
     // Add user 2 as viewer
-    await page.request.post(`${BASE_URL}/api/trees/${treeId}/members`, {
+    await page.request.post(`/api/trees/${treeId}/members`, {
       data: {
         user_id: 2,
         role: 'viewer'
@@ -332,7 +336,7 @@ test.describe('Permissions', () => {
     await testLogin(page, 2)
 
     // Try to create a node via API
-    const response = await page.request.post(`${BASE_URL}/api/trees/${treeId}/nodes`, {
+    const response = await page.request.post(`/api/trees/${treeId}/nodes`, {
       data: {
         title: '不正ノード',
         content: 'テスト',
@@ -375,7 +379,7 @@ test.describe('Tree Isolation', () => {
     await testLogin(page, 2)
 
     // Try to access user 1's tree
-    await page.goto(`${BASE_URL}/index.html?tree=${treeId}`)
+    await page.goto(`/index.html?tree=${treeId}`)
 
     // Should be redirected to My Page with error
     await page.waitForTimeout(2000)
@@ -404,7 +408,7 @@ test.describe('Tree Isolation', () => {
     const treeBId = new URL(page.url()).searchParams.get('tree')
 
     // Create a node in tree A
-    const nodeAResponse = await page.request.post(`${BASE_URL}/api/trees/${treeAId}/nodes`, {
+    const nodeAResponse = await page.request.post(`/api/trees/${treeAId}/nodes`, {
       data: {
         title: 'ノードA',
         content: 'ツリーAのノード',
@@ -415,7 +419,7 @@ test.describe('Tree Isolation', () => {
     const nodeAId = nodeAData.data.id
 
     // Create a node in tree B
-    const nodeBResponse = await page.request.post(`${BASE_URL}/api/trees/${treeBId}/nodes`, {
+    const nodeBResponse = await page.request.post(`/api/trees/${treeBId}/nodes`, {
       data: {
         title: 'ノードB',
         content: 'ツリーBのノード',
@@ -426,7 +430,7 @@ test.describe('Tree Isolation', () => {
     const nodeBId = nodeBData.data.id
 
     // Try to create cross-tree relation
-    const relationResponse = await page.request.post(`${BASE_URL}/api/trees/${treeAId}/relations`, {
+    const relationResponse = await page.request.post(`/api/trees/${treeAId}/relations`, {
       data: {
         parent_node_id: nodeAId,
         child_node_id: nodeBId

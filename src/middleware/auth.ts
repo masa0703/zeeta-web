@@ -6,6 +6,7 @@
  */
 
 import { Context, Next } from 'hono'
+import { getCookie } from 'hono/cookie'
 import { verifyJWT, JWTPayload } from '../utils/jwt'
 
 /**
@@ -22,7 +23,7 @@ import { verifyJWT, JWTPayload } from '../utils/jwt'
  */
 export async function authMiddleware(c: Context, next: Next) {
   // Get token from cookie
-  const token = c.req.cookie('session')
+  const token = getCookie(c, 'session')
 
   if (!token) {
     return c.json(
@@ -76,7 +77,7 @@ export async function authMiddleware(c: Context, next: Next) {
  * @param next - Next middleware function
  */
 export async function optionalAuthMiddleware(c: Context, next: Next) {
-  const token = c.req.cookie('session')
+  const token = getCookie(c, 'session')
 
   if (token) {
     const jwtSecret = c.env.JWT_SECRET
