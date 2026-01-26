@@ -22,15 +22,15 @@
 ### Phase別進捗
 
 #### Phase 1: 基盤 ✅
-- [x] マイグレーション `0006_add_multi_user_tables.sql` 作成
-- [x] OAuth認証実装（Google & GitHub）
-- [x] JWT セッション管理実装
-- [x] 認証ミドルウェア実装
-- [x] データベースヘルパー関数実装
-- [x] ログインページ作成
-- [x] 認証ルートを index.tsx に追加
-- [x] 環境変数設定（wrangler.toml, .dev.vars.example）
-- [x] Phase 1 セットアップガイド作成
+- [x] マイグレーション `0006_add_multi_user_tables.sql` 作成 → [migrations/0006_add_multi_user_tables.sql](migrations/0006_add_multi_user_tables.sql)
+- [x] OAuth認証実装（Google & GitHub） → [src/config/oauth.ts](src/config/oauth.ts)
+- [x] JWT セッション管理実装 → [src/utils/jwt.ts](src/utils/jwt.ts)
+- [x] 認証ミドルウェア実装 → [src/middleware/auth.ts](src/middleware/auth.ts)
+- [x] データベースヘルパー関数実装 → [src/utils/database.ts](src/utils/database.ts)
+- [x] ログインページ作成 → [public/login.html](public/login.html)
+- [x] 認証ルートを index.tsx に追加 → [src/index.tsx](src/index.tsx)
+- [x] 環境変数設定（wrangler.toml, .dev.vars.example） → [wrangler.toml](wrangler.toml), [.dev.vars.example](.dev.vars.example)
+- [x] Phase 1 セットアップガイド作成 → [docs/phase1-setup-guide.md](docs/phase1-setup-guide.md)
 
 #### Phase 2: ツリー・権限管理 ⏸️
 - [ ] ツリー管理API実装（GET /api/trees）
