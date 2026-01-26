@@ -5,6 +5,17 @@ import { getOAuthConfig, normalizeGoogleUser, normalizeGitHubUser, OAuthUserInfo
 import { generateJWT } from './utils/jwt'
 import { upsertOAuthUser, createSession, deleteSession } from './utils/database'
 import { authMiddleware, getCurrentUser } from './middleware/auth'
+import { getUserTrees, getTreeById, createTree, updateTree, deleteTree, getTreeStats } from './utils/trees'
+import {
+  canViewTree,
+  canEditTree,
+  canUpdateTreeMetadata,
+  canDeleteTree,
+  canManageMembers,
+  getTreeMembers,
+  removeTreeMember,
+  updateMemberRole
+} from './utils/permissions'
 
 // ビルド番号のグローバル型定義
 declare const __BUILD_NUMBER__: string
@@ -216,6 +227,281 @@ app.get('/auth/me', authMiddleware, async (c) => {
       }
     })
   } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ===============================
+// Tree Management API Routes
+// ===============================
+
+// Get all trees accessible by the current user
+app.get('/api/trees', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const trees = await getUserTrees(c.env.DB, user.user_id)
+
+    return c.json({
+      success: true,
+      data: trees
+    })
+  } catch (error) {
+    console.error('Failed to get trees:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Create a new tree
+app.post('/api/trees', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const body = await c.req.json()
+
+    const { name, description } = body
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return c.json({ success: false, error: 'Tree name is required' }, 400)
+    }
+
+    const tree = await createTree(
+      c.env.DB,
+      name.trim(),
+      description || null,
+      user.user_id
+    )
+
+    return c.json({
+      success: true,
+      data: tree
+    })
+  } catch (error) {
+    console.error('Failed to create tree:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get a specific tree
+app.get('/api/trees/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const tree = await getTreeById(c.env.DB, treeId)
+    if (!tree) {
+      return c.json({ success: false, error: 'Tree not found' }, 404)
+    }
+
+    // Get tree statistics
+    const stats = await getTreeStats(c.env.DB, treeId)
+
+    return c.json({
+      success: true,
+      data: {
+        ...tree,
+        stats
+      }
+    })
+  } catch (error) {
+    console.error('Failed to get tree:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Update tree metadata (name, description)
+app.put('/api/trees/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user can update tree metadata (owner only)
+    const canUpdate = await canUpdateTreeMetadata(c.env.DB, treeId, user.user_id)
+    if (!canUpdate) {
+      return c.json({ success: false, error: 'Only the owner can update tree metadata' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { name, description } = body
+
+    const updates: { name?: string; description?: string } = {}
+
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return c.json({ success: false, error: 'Invalid tree name' }, 400)
+      }
+      updates.name = name.trim()
+    }
+
+    if (description !== undefined) {
+      updates.description = description
+    }
+
+    const updatedTree = await updateTree(c.env.DB, treeId, updates)
+
+    return c.json({
+      success: true,
+      data: updatedTree
+    })
+  } catch (error) {
+    console.error('Failed to update tree:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Delete a tree
+app.delete('/api/trees/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user can delete tree (owner only)
+    const canDelete = await canDeleteTree(c.env.DB, treeId, user.user_id)
+    if (!canDelete) {
+      return c.json({ success: false, error: 'Only the owner can delete the tree' }, 403)
+    }
+
+    await deleteTree(c.env.DB, treeId)
+
+    return c.json({
+      success: true,
+      message: 'Tree deleted successfully'
+    })
+  } catch (error) {
+    console.error('Failed to delete tree:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ===============================
+// Tree Member Management API Routes
+// ===============================
+
+// Get all members of a tree
+app.get('/api/trees/:id/members', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const members = await getTreeMembers(c.env.DB, treeId)
+
+    return c.json({
+      success: true,
+      data: members
+    })
+  } catch (error) {
+    console.error('Failed to get tree members:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Remove a member from a tree
+app.delete('/api/trees/:id/members/:userId', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+    const targetUserId = parseInt(c.req.param('userId'))
+
+    if (isNaN(treeId) || isNaN(targetUserId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or user ID' }, 400)
+    }
+
+    // Check if user can manage members
+    const canManage = await canManageMembers(c.env.DB, treeId, user.user_id)
+    if (!canManage) {
+      return c.json({ success: false, error: 'You do not have permission to manage members' }, 403)
+    }
+
+    // Cannot remove the owner
+    const tree = await getTreeById(c.env.DB, treeId)
+    if (!tree) {
+      return c.json({ success: false, error: 'Tree not found' }, 404)
+    }
+
+    if (targetUserId === tree.owner_user_id) {
+      return c.json({ success: false, error: 'Cannot remove the owner from the tree' }, 400)
+    }
+
+    await removeTreeMember(c.env.DB, treeId, targetUserId)
+
+    return c.json({
+      success: true,
+      message: 'Member removed successfully'
+    })
+  } catch (error) {
+    console.error('Failed to remove member:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Update a member's role
+app.put('/api/trees/:id/members/:userId/role', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+    const targetUserId = parseInt(c.req.param('userId'))
+
+    if (isNaN(treeId) || isNaN(targetUserId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or user ID' }, 400)
+    }
+
+    // Only owner can change roles
+    const isOwner = await canUpdateTreeMetadata(c.env.DB, treeId, user.user_id)
+    if (!isOwner) {
+      return c.json({ success: false, error: 'Only the owner can change member roles' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { role } = body
+
+    if (!role || !['owner', 'editor', 'viewer'].includes(role)) {
+      return c.json({ success: false, error: 'Invalid role. Must be owner, editor, or viewer' }, 400)
+    }
+
+    // Cannot change the owner's role
+    const tree = await getTreeById(c.env.DB, treeId)
+    if (!tree) {
+      return c.json({ success: false, error: 'Tree not found' }, 404)
+    }
+
+    if (targetUserId === tree.owner_user_id && role !== 'owner') {
+      return c.json({ success: false, error: 'Cannot change the owner\'s role' }, 400)
+    }
+
+    await updateMemberRole(c.env.DB, treeId, targetUserId, role)
+
+    return c.json({
+      success: true,
+      message: 'Member role updated successfully'
+    })
+  } catch (error) {
+    console.error('Failed to update member role:', error)
     return c.json({ success: false, error: String(error) }, 500)
   }
 })
