@@ -7,3 +7,15 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "zeeta2-production"
 database_id = "17a62bfc-fdfa-4246-b9f6-ac289716805e"
+
+# Environment variables for development
+# For production, use: wrangler secret put <KEY>
+[vars]
+APP_URL = "http://localhost:8787"
+
+# OAuth credentials (set these via wrangler secret put for production)
+# GOOGLE_CLIENT_ID = "your-google-client-id"
+# GOOGLE_CLIENT_SECRET = "your-google-client-secret"
+# GITHUB_CLIENT_ID = "your-github-client-id"
+# GITHUB_CLIENT_SECRET = "your-github-client-secret"
+# JWT_SECRET = "your-jwt-secret-minimum-32-characters"

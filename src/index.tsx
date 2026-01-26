@@ -1,12 +1,22 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
+import { getOAuthConfig, normalizeGoogleUser, normalizeGitHubUser, OAuthUserInfo } from './config/oauth'
+import { generateJWT } from './utils/jwt'
+import { upsertOAuthUser, createSession, deleteSession } from './utils/database'
+import { authMiddleware, getCurrentUser } from './middleware/auth'
 
 // ビルド番号のグローバル型定義
 declare const __BUILD_NUMBER__: string
 
 type Bindings = {
   DB: D1Database
+  JWT_SECRET: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
+  GITHUB_CLIENT_ID: string
+  GITHUB_CLIENT_SECRET: string
+  APP_URL: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -31,6 +41,188 @@ app.get('/api/version', (c) => {
     }
   })
 })
+
+// ===============================
+// Authentication Routes
+// ===============================
+
+// Initiate OAuth login flow
+app.get('/auth/login/:provider', (c) => {
+  const provider = c.req.param('provider') as 'google' | 'github'
+
+  if (provider !== 'google' && provider !== 'github') {
+    return c.json({ success: false, error: 'Invalid provider' }, 400)
+  }
+
+  const config = getOAuthConfig(c.env)[provider]
+
+  // Generate CSRF state token
+  const state = crypto.randomUUID()
+
+  // Store state in cookie (10 minutes expiration)
+  c.header(
+    'Set-Cookie',
+    `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Max-Age=600; Path=/`
+  )
+
+  // Build authorization URL
+  const authUrl = new URL(config.authUrl)
+  authUrl.searchParams.set('client_id', config.clientId)
+  authUrl.searchParams.set('redirect_uri', config.redirectUri)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('scope', config.scope)
+  authUrl.searchParams.set('state', state)
+
+  // Redirect to OAuth provider
+  return c.redirect(authUrl.toString())
+})
+
+// Handle OAuth callback
+app.get('/auth/callback/:provider', async (c) => {
+  try {
+    const provider = c.req.param('provider') as 'google' | 'github'
+
+    if (provider !== 'google' && provider !== 'github') {
+      return c.json({ success: false, error: 'Invalid provider' }, 400)
+    }
+
+    const code = c.req.query('code')
+    const state = c.req.query('state')
+    const savedState = c.req.cookie('oauth_state')
+
+    // Validate state (CSRF protection)
+    if (!state || !savedState || state !== savedState) {
+      return c.json({ success: false, error: 'Invalid state parameter' }, 400)
+    }
+
+    if (!code) {
+      return c.json({ success: false, error: 'No authorization code provided' }, 400)
+    }
+
+    const config = getOAuthConfig(c.env)[provider]
+
+    // Exchange code for access token
+    const tokenResponse = await fetch(config.tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json'
+      },
+      body: new URLSearchParams({
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        code,
+        redirect_uri: config.redirectUri,
+        grant_type: 'authorization_code'
+      })
+    })
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error('Token exchange failed:', errorText)
+      return c.json({ success: false, error: 'Failed to exchange authorization code' }, 500)
+    }
+
+    const tokenData = await tokenResponse.json() as any
+    const accessToken = tokenData.access_token
+
+    if (!accessToken) {
+      return c.json({ success: false, error: 'No access token received' }, 500)
+    }
+
+    // Fetch user info from OAuth provider
+    const userResponse = await fetch(config.userInfoUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json'
+      }
+    })
+
+    if (!userResponse.ok) {
+      return c.json({ success: false, error: 'Failed to fetch user information' }, 500)
+    }
+
+    const userInfo = await userResponse.json() as any
+
+    // Normalize user info based on provider
+    let oauthUser: OAuthUserInfo
+    if (provider === 'google') {
+      oauthUser = normalizeGoogleUser(userInfo)
+    } else {
+      oauthUser = normalizeGitHubUser(userInfo)
+    }
+
+    // Create or update user in database
+    const user = await upsertOAuthUser(c.env.DB, oauthUser)
+
+    // Generate JWT
+    const token = await generateJWT(
+      {
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name || '',
+        avatar_url: user.avatar_url || undefined
+      },
+      c.env.JWT_SECRET
+    )
+
+    // Create session record
+    await createSession(c.env.DB, user.id, token, 30 * 24 * 60 * 60) // 30 days
+
+    // Set session cookie
+    c.header(
+      'Set-Cookie',
+      `session=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`
+    )
+
+    // Clear OAuth state cookie
+    c.header('Set-Cookie', 'oauth_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/')
+
+    // Redirect to My Page
+    return c.redirect('/my-page')
+  } catch (error) {
+    console.error('OAuth callback error:', error)
+    return c.json({ success: false, error: 'Authentication failed' }, 500)
+  }
+})
+
+// Logout
+app.post('/auth/logout', async (c) => {
+  const token = c.req.cookie('session')
+
+  if (token) {
+    // Delete session from database
+    await deleteSession(c.env.DB, token)
+  }
+
+  // Clear session cookie
+  c.header('Set-Cookie', 'session=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/')
+
+  return c.json({ success: true })
+})
+
+// Get current user info
+app.get('/auth/me', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+
+    return c.json({
+      success: true,
+      data: {
+        id: user.user_id,
+        email: user.email,
+        display_name: user.display_name,
+        avatar_url: user.avatar_url
+      }
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ===============================
+// Node API Routes
+// ===============================
 
 // 全ノード取得
 app.get('/api/nodes', async (c) => {
