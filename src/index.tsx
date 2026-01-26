@@ -232,6 +232,93 @@ app.get('/auth/me', authMiddleware, async (c) => {
 })
 
 // ===============================
+// Test-Only Endpoints (Development/Test Environment Only)
+// ===============================
+
+// Test-only endpoint for E2E testing (skip OAuth)
+app.get('/auth/test-login', async (c) => {
+  // Only allow in development/test
+  const appUrl = c.env.APP_URL || ''
+  if (!appUrl.includes('localhost') && !appUrl.includes('127.0.0.1')) {
+    return c.json({ success: false, error: 'Test login only available in development' }, 403)
+  }
+
+  try {
+    const userId = c.req.query('user_id') || '1'
+    const testUserId = parseInt(userId)
+
+    // Get or create test user
+    let user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(testUserId).first()
+
+    if (!user) {
+      // Create test user
+      user = await c.env.DB.prepare(
+        `INSERT INTO users (oauth_provider, oauth_provider_id, email, display_name, avatar_url, last_login_at)
+         VALUES ('test', ?, ?, ?, NULL, CURRENT_TIMESTAMP)
+         RETURNING *`
+      )
+        .bind(`test-${testUserId}`, `test-user-${testUserId}@example.com`, `Test User ${testUserId}`)
+        .first()
+    }
+
+    if (!user) {
+      return c.json({ success: false, error: 'Failed to create test user' }, 500)
+    }
+
+    // Generate JWT
+    const token = await generateJWT(
+      {
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name || '',
+        avatar_url: user.avatar_url || undefined
+      },
+      c.env.JWT_SECRET
+    )
+
+    // Create session record
+    await createSession(c.env.DB, user.id, token, 30 * 24 * 60 * 60)
+
+    // Set session cookie
+    c.header(
+      'Set-Cookie',
+      `session=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`
+    )
+
+    return c.redirect('/my-page.html')
+  } catch (error) {
+    console.error('Test login error:', error)
+    return c.json({ success: false, error: 'Test login failed' }, 500)
+  }
+})
+
+// Test-only endpoint to clear all data
+app.delete('/api/test/clear', async (c) => {
+  // Only allow in development/test
+  const appUrl = c.env.APP_URL || ''
+  if (!appUrl.includes('localhost') && !appUrl.includes('127.0.0.1')) {
+    return c.json({ success: false, error: 'Clear data only available in development' }, 403)
+  }
+
+  try {
+    // Delete in reverse order of dependencies
+    await c.env.DB.prepare('DELETE FROM node_relations').run()
+    await c.env.DB.prepare('DELETE FROM nodes').run()
+    await c.env.DB.prepare('DELETE FROM sessions').run()
+    await c.env.DB.prepare('DELETE FROM invitations').run()
+    await c.env.DB.prepare('DELETE FROM notifications').run()
+    await c.env.DB.prepare('DELETE FROM tree_members').run()
+    await c.env.DB.prepare('DELETE FROM trees').run()
+    await c.env.DB.prepare('DELETE FROM users').run()
+
+    return c.json({ success: true, message: 'All test data cleared' })
+  } catch (error) {
+    console.error('Clear data error:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ===============================
 // Tree Management API Routes
 // ===============================
 
