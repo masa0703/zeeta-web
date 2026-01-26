@@ -15,8 +15,8 @@
 
 ### 現在の状態
 - **開始日**: 2026-01-26
-- **現在のフェーズ**: Phase 2（完了）→ Phase 3 準備中
-- **全体の進捗**: 25% (2/8 フェーズ完了)
+- **現在のフェーズ**: Phase 3（完了）→ Phase 4 準備中（早期テスト実施予定）
+- **全体の進捗**: 37.5% (3/8 フェーズ完了)
 - **最終更新**: 2026-01-26
 
 ### Phase別進捗
@@ -42,13 +42,14 @@
 - [x] マイページUI作成 → [public/my-page.html](public/my-page.html), [public/static/my-page.js](public/static/my-page.js)
 - [x] メンバー管理モーダルUI作成 → [public/my-page.html](public/my-page.html), [public/static/my-page.js](public/static/my-page.js)
 
-#### Phase 3: ノード管理のツリー対応 ⏸️
-- [ ] ノードAPI のツリースコープ化
-- [ ] 関係API のツリースコープ化
-- [ ] 同一ツリー内検証ロジック追加
-- [ ] エディタページのURL変更（/trees/:tree_id/editor）
-- [ ] エディタヘッダー追加（パンくず、メンバー管理ボタン）
-- [ ] 権限ベースUI実装（閲覧者制限）
+#### Phase 3: ノード管理のツリー対応 ✅
+- [x] ノードAPI のツリースコープ化 → [src/index.tsx](src/index.tsx)
+- [x] 関係API のツリースコープ化 → [src/index.tsx](src/index.tsx)
+- [x] 同一ツリー内検証ロジック追加 → [src/index.tsx](src/index.tsx)
+- [x] エディタページのツリーコンテキスト対応 → [public/static/app.js](public/static/app.js)
+- [x] 認証チェックとアクセス権検証 → [public/static/app.js](public/static/app.js)
+- [x] ツリーヘッダー追加（マイページリンク、ツリー名、役割バッジ） → [public/static/app.js](public/static/app.js)
+- [x] 権限ベースUI実装（閲覧者制限） → [public/static/app.js](public/static/app.js)
 
 #### Phase 4: 楽観的ロック ⏸️
 - [ ] ノードテーブルに version カラム追加（マイグレーション）
@@ -111,7 +112,11 @@
   - `public/static/my-page.js` - マイページロジック
 - ✅ 修正ファイル（Phase 2）:
   - `src/index.tsx` - ツリー管理API、メンバー管理API追加
-- 📝 次回: Phase 3 開始（ノード管理のツリー対応）
+- ✅ Phase 3 完了: ノード管理のツリー対応、エディタのツリーコンテキスト対応
+- ✅ 修正ファイル（Phase 3）:
+  - `src/index.tsx` - ツリースコープノードAPI、同一ツリー内検証ロジック追加
+  - `public/static/app.js` - 認証チェック、ツリーコンテキスト、権限ベースUI実装
+- 📝 次回: Phase 3 完了後のE2Eテスト作成、その後 Phase 4（楽観的ロック）
 
 ---
 

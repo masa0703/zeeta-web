@@ -507,7 +507,471 @@ app.put('/api/trees/:id/members/:userId/role', authMiddleware, async (c) => {
 })
 
 // ===============================
-// Node API Routes
+// Tree-Scoped Node API Routes
+// ===============================
+
+// Get all nodes in a tree
+app.get('/api/trees/:tree_id/nodes', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM nodes WHERE tree_id = ? ORDER BY root_position, created_at'
+    )
+      .bind(treeId)
+      .all()
+
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    console.error('Failed to get nodes:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get a specific node in a tree
+app.get('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or node ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const node = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ? AND tree_id = ?')
+      .bind(nodeId, treeId)
+      .first()
+
+    if (!node) {
+      return c.json({ success: false, error: 'Node not found' }, 404)
+    }
+
+    return c.json({ success: true, data: node })
+  } catch (error) {
+    console.error('Failed to get node:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get child nodes (using relation table)
+app.get('/api/trees/:tree_id/nodes/:id/children', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or node ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const { results } = await c.env.DB.prepare(
+      `SELECT n.* FROM nodes n
+       INNER JOIN node_relations nr ON n.id = nr.child_node_id
+       WHERE nr.parent_node_id = ? AND n.tree_id = ?
+       ORDER BY nr.position, n.created_at`
+    )
+      .bind(nodeId, treeId)
+      .all()
+
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    console.error('Failed to get child nodes:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get parent nodes (multi-parent support)
+app.get('/api/trees/:tree_id/nodes/:id/parents', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or node ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const { results } = await c.env.DB.prepare(
+      `SELECT n.* FROM nodes n
+       INNER JOIN node_relations nr ON n.id = nr.parent_node_id
+       WHERE nr.child_node_id = ? AND n.tree_id = ?
+       ORDER BY n.created_at`
+    )
+      .bind(nodeId, treeId)
+      .all()
+
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    console.error('Failed to get parent nodes:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get root nodes (nodes without parents)
+app.get('/api/trees/:tree_id/nodes/root', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    const { results } = await c.env.DB.prepare(
+      `SELECT * FROM nodes
+       WHERE tree_id = ? AND id NOT IN (SELECT child_node_id FROM node_relations)
+       ORDER BY root_position, created_at`
+    )
+      .bind(treeId)
+      .all()
+
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    console.error('Failed to get root nodes:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get all relations in a tree
+app.get('/api/trees/:tree_id/relations', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user has access to this tree
+    const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    // Get all relations for nodes in this tree
+    const { results } = await c.env.DB.prepare(
+      `SELECT nr.* FROM node_relations nr
+       INNER JOIN nodes n ON nr.parent_node_id = n.id
+       WHERE n.tree_id = ?
+       ORDER BY nr.parent_node_id, nr.position`
+    )
+      .bind(treeId)
+      .all()
+
+    return c.json({ success: true, data: results })
+  } catch (error) {
+    console.error('Failed to get relations:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Create a node in a tree
+app.post('/api/trees/:tree_id/nodes', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { title, content, author, root_position } = body
+
+    if (!title || !author) {
+      return c.json({ success: false, error: 'Title and author are required' }, 400)
+    }
+
+    // Calculate root_position if not specified
+    let finalRootPosition = root_position
+    if (finalRootPosition === undefined) {
+      const maxPosResult = await c.env.DB.prepare(
+        'SELECT COALESCE(MAX(root_position), -1) as max_pos FROM nodes WHERE tree_id = ?'
+      )
+        .bind(treeId)
+        .first()
+      finalRootPosition = (maxPosResult?.max_pos as number) + 1
+    }
+
+    const result = await c.env.DB.prepare(
+      `INSERT INTO nodes (tree_id, title, content, author, root_position, created_by_user_id, updated_by_user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    )
+      .bind(treeId, title, content || '', author, finalRootPosition, user.user_id, user.user_id)
+      .first()
+
+    return c.json({ success: true, data: result }, 201)
+  } catch (error) {
+    console.error('Failed to create node:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Update a node in a tree
+app.put('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or node ID' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { title, content, author } = body
+
+    // Get current node
+    const existing = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ? AND tree_id = ?')
+      .bind(nodeId, treeId)
+      .first()
+
+    if (!existing) {
+      return c.json({ success: false, error: 'Node not found' }, 404)
+    }
+
+    // Update node
+    await c.env.DB.prepare(
+      `UPDATE nodes
+       SET title = ?, content = ?, author = ?, updated_by_user_id = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND tree_id = ?`
+    )
+      .bind(
+        title !== undefined ? title : existing.title,
+        content !== undefined ? content : existing.content,
+        author !== undefined ? author : existing.author,
+        user.user_id,
+        nodeId,
+        treeId
+      )
+      .run()
+
+    // Get updated node
+    const updated = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ? AND tree_id = ?')
+      .bind(nodeId, treeId)
+      .first()
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Failed to update node:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Delete a node in a tree
+app.delete('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or node ID' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    const result = await c.env.DB.prepare('DELETE FROM nodes WHERE id = ? AND tree_id = ?')
+      .bind(nodeId, treeId)
+      .run()
+
+    if (result.meta.changes === 0) {
+      return c.json({ success: false, error: 'Node not found' }, 404)
+    }
+
+    return c.json({ success: true, message: 'Node deleted' })
+  } catch (error) {
+    console.error('Failed to delete node:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Add a parent-child relation (with circular reference check and same-tree validation)
+app.post('/api/trees/:tree_id/relations', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { parent_node_id, child_node_id } = body
+
+    if (!parent_node_id || !child_node_id) {
+      return c.json({ success: false, error: 'parent_node_id and child_node_id are required' }, 400)
+    }
+
+    // Self-reference check
+    if (parent_node_id === child_node_id) {
+      return c.json({ success: false, error: 'Cannot create self-reference' }, 400)
+    }
+
+    // Verify both nodes belong to the same tree
+    const parentNode = await c.env.DB.prepare('SELECT tree_id FROM nodes WHERE id = ?')
+      .bind(parent_node_id)
+      .first<{ tree_id: number }>()
+
+    const childNode = await c.env.DB.prepare('SELECT tree_id FROM nodes WHERE id = ?')
+      .bind(child_node_id)
+      .first<{ tree_id: number }>()
+
+    if (!parentNode || !childNode) {
+      return c.json({ success: false, error: 'Parent or child node not found' }, 404)
+    }
+
+    if (parentNode.tree_id !== treeId || childNode.tree_id !== treeId) {
+      return c.json(
+        { success: false, error: 'Both nodes must belong to the same tree' },
+        400
+      )
+    }
+
+    // Circular reference check
+    const hasCircular = await checkCircularReference(c.env.DB, parent_node_id, child_node_id)
+    if (hasCircular) {
+      return c.json({ success: false, error: 'Circular reference detected' }, 400)
+    }
+
+    // Check if relation already exists
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    )
+      .bind(parent_node_id, child_node_id)
+      .first()
+
+    if (existing) {
+      return c.json({ success: false, error: 'Relation already exists' }, 400)
+    }
+
+    // Calculate position (add to end of parent's children)
+    const maxPosResult = await c.env.DB.prepare(
+      'SELECT COALESCE(MAX(position), -1) as max_pos FROM node_relations WHERE parent_node_id = ?'
+    )
+      .bind(parent_node_id)
+      .first()
+
+    const newPosition = (maxPosResult?.max_pos as number) + 1
+
+    // Add relation
+    const result = await c.env.DB.prepare(
+      'INSERT INTO node_relations (parent_node_id, child_node_id, position) VALUES (?, ?, ?) RETURNING *'
+    )
+      .bind(parent_node_id, child_node_id, newPosition)
+      .first()
+
+    return c.json({ success: true, data: result }, 201)
+  } catch (error) {
+    console.error('Failed to create relation:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Delete a parent-child relation
+app.delete('/api/trees/:tree_id/relations/:parent_id/:child_id', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const parentId = parseInt(c.req.param('parent_id'))
+    const childId = parseInt(c.req.param('child_id'))
+
+    if (isNaN(treeId) || isNaN(parentId) || isNaN(childId)) {
+      return c.json({ success: false, error: 'Invalid tree ID, parent ID, or child ID' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    // Verify nodes belong to the tree
+    const parentNode = await c.env.DB.prepare('SELECT tree_id FROM nodes WHERE id = ?')
+      .bind(parentId)
+      .first<{ tree_id: number }>()
+
+    if (!parentNode || parentNode.tree_id !== treeId) {
+      return c.json({ success: false, error: 'Parent node not found in this tree' }, 404)
+    }
+
+    const result = await c.env.DB.prepare(
+      'DELETE FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    )
+      .bind(parentId, childId)
+      .run()
+
+    if (result.meta.changes === 0) {
+      return c.json({ success: false, error: 'Relation not found' }, 404)
+    }
+
+    return c.json({ success: true, message: 'Relation deleted' })
+  } catch (error) {
+    console.error('Failed to delete relation:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ===============================
+// Legacy Node API Routes (for backward compatibility)
 // ===============================
 
 // 全ノード取得

@@ -1,6 +1,10 @@
 // ===============================
 // グローバル状態管理
 // ===============================
+let currentTreeId = null // Current tree ID
+let currentUser = null // Current user info
+let currentUserRole = null // Current user's role in this tree ('owner', 'editor', 'viewer')
+let currentTree = null // Current tree info
 let nodes = []
 let relations = []
 let selectedNodeId = null
@@ -66,6 +70,229 @@ function showToast(message, type = 'success', duration = 5000) {
 }
 
 // ===============================
+// Authentication & Tree Context
+// ===============================
+
+/**
+ * Check if user is authenticated
+ */
+async function checkAuth() {
+  try {
+    const response = await axios.get('/auth/me')
+    if (response.data.success && response.data.data) {
+      currentUser = response.data.data
+      return true
+    }
+    return false
+  } catch (error) {
+    console.error('Auth check failed:', error)
+    return false
+  }
+}
+
+/**
+ * Get tree ID from URL query parameter
+ */
+function getTreeIdFromURL() {
+  const params = new URLSearchParams(window.location.search)
+  const treeId = params.get('tree')
+  return treeId ? parseInt(treeId) : null
+}
+
+/**
+ * Load tree information and check access
+ */
+async function loadTreeContext() {
+  currentTreeId = getTreeIdFromURL()
+
+  if (!currentTreeId) {
+    showToast('ツリーIDが指定されていません', 'error')
+    setTimeout(() => {
+      window.location.href = '/my-page.html'
+    }, 2000)
+    return false
+  }
+
+  try {
+    // Get tree info
+    const treeRes = await axios.get(`/api/trees/${currentTreeId}`)
+    if (!treeRes.data.success) {
+      showToast('ツリー情報の取得に失敗しました', 'error')
+      setTimeout(() => {
+        window.location.href = '/my-page.html'
+      }, 2000)
+      return false
+    }
+
+    currentTree = treeRes.data.data
+
+    // Get user's role in this tree
+    const treesRes = await axios.get('/api/trees')
+    if (treesRes.data.success) {
+      const userTree = treesRes.data.data.find(t => t.id === currentTreeId)
+      if (userTree) {
+        currentUserRole = userTree.role
+      } else {
+        showToast('このツリーへのアクセス権がありません', 'error')
+        setTimeout(() => {
+          window.location.href = '/my-page.html'
+        }, 2000)
+        return false
+      }
+    }
+
+    // Update UI with tree context
+    updateTreeHeader()
+    return true
+  } catch (error) {
+    console.error('Failed to load tree context:', error)
+    showToast('ツリー情報の読み込みに失敗しました', 'error')
+    setTimeout(() => {
+      window.location.href = '/my-page.html'
+    }, 2000)
+    return false
+  }
+}
+
+/**
+ * Update header with tree information
+ */
+function updateTreeHeader() {
+  // Add header if it doesn't exist
+  let header = document.getElementById('tree-header')
+  if (!header) {
+    header = document.createElement('div')
+    header.id = 'tree-header'
+    header.style.cssText = `
+      background: white;
+      border-bottom: 2px solid #e2e8f0;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    `
+    document.body.insertBefore(header, document.body.firstChild)
+  }
+
+  const roleLabels = {
+    owner: 'オーナー',
+    editor: '編集者',
+    viewer: '閲覧者'
+  }
+
+  header.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="/my-page.html" style="color: #667eea; text-decoration: none; font-weight: 600;">
+        ← マイページ
+      </a>
+      <span style="color: #cbd5e0;">|</span>
+      <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #2d3748;">
+        ${escapeHtml(currentTree.name)}
+      </h1>
+      <span style="
+        background: ${currentUserRole === 'owner' ? '#667eea' : currentUserRole === 'editor' ? '#48bb78' : '#4299e1'};
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      ">
+        ${roleLabels[currentUserRole] || currentUserRole}
+      </span>
+      ${currentUserRole === 'viewer' ? '<span style="color: #e53e3e; font-size: 0.875rem; font-weight: 500;">閲覧専用</span>' : ''}
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      ${currentUser ? `
+        <span style="font-size: 0.875rem; color: #718096;">${escapeHtml(currentUser.display_name || currentUser.email)}</span>
+      ` : ''}
+      <button onclick="logout()" style="
+        background: transparent;
+        border: 1px solid #cbd5e0;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: #4a5568;
+      ">
+        ログアウト
+      </button>
+    </div>
+  `
+
+  // Disable editing controls if viewer
+  if (currentUserRole === 'viewer') {
+    disableEditingForViewer()
+  }
+}
+
+/**
+ * Disable editing controls for viewer role
+ */
+function disableEditingForViewer() {
+  // Disable all input fields and buttons related to editing
+  const editControls = [
+    '#title-input',
+    '#content-input',
+    '#new-node-title',
+    '#new-node-content',
+    '#create-node-btn',
+    '#update-node-btn',
+    '#delete-node-btn',
+    '.add-child-btn',
+    '.delete-relation-btn'
+  ]
+
+  editControls.forEach(selector => {
+    const elements = document.querySelectorAll(selector)
+    elements.forEach(el => {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.disabled = true
+        el.style.backgroundColor = '#f7fafc'
+      } else if (el.tagName === 'BUTTON') {
+        el.disabled = true
+        el.style.opacity = '0.5'
+        el.style.cursor = 'not-allowed'
+      }
+    })
+  })
+
+  // Show viewer notice
+  showToast('閲覧専用モードです。編集はできません。', 'info', 8000)
+}
+
+/**
+ * Check if user can edit (owner or editor)
+ */
+function canEdit() {
+  return currentUserRole === 'owner' || currentUserRole === 'editor'
+}
+
+/**
+ * Logout
+ */
+async function logout() {
+  try {
+    await axios.post('/auth/logout')
+    window.location.href = '/login.html'
+  } catch (error) {
+    console.error('Logout failed:', error)
+    window.location.href = '/login.html'
+  }
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+// ===============================
 // API呼び出し
 // ===============================
 async function fetchVersion() {
@@ -83,10 +310,15 @@ async function fetchVersion() {
 }
 
 async function fetchNodes() {
+  if (!currentTreeId) {
+    console.error('No tree ID set')
+    return
+  }
+
   try {
     const [nodesRes, relationsRes] = await Promise.all([
-      axios.get('/api/nodes'),
-      axios.get('/api/relations')
+      axios.get(`/api/trees/${currentTreeId}/nodes`),
+      axios.get(`/api/trees/${currentTreeId}/relations`)
     ])
 
     if (nodesRes.data.success && relationsRes.data.success) {
@@ -96,13 +328,25 @@ async function fetchNodes() {
     }
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
-    showToast('ノードの取得に失敗しました', 'error')
+    if (error.response?.status === 403) {
+      showToast('このツリーへのアクセス権がありません', 'error')
+      setTimeout(() => {
+        window.location.href = '/my-page.html'
+      }, 2000)
+    } else {
+      showToast('ノードの取得に失敗しました', 'error')
+    }
   }
 }
 
 async function addRelation(parentId, childId) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return false
+  }
+
   try {
-    const response = await axios.post('/api/relations', {
+    const response = await axios.post(`/api/trees/${currentTreeId}/relations`, {
       parent_node_id: parentId,
       child_node_id: childId
     })
@@ -128,8 +372,13 @@ async function addRelation(parentId, childId) {
 }
 
 async function removeRelation(parentId, childId) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return false
+  }
+
   try {
-    const response = await axios.delete(`/api/relations/${parentId}/${childId}`)
+    const response = await axios.delete(`/api/trees/${currentTreeId}/relations/${parentId}/${childId}`)
     if (response.data.success) {
       await fetchNodes()
       return true
@@ -143,7 +392,7 @@ async function removeRelation(parentId, childId) {
 
 async function fetchNodeById(id) {
   try {
-    const response = await axios.get(`/api/nodes/${id}`)
+    const response = await axios.get(`/api/trees/${currentTreeId}/nodes/${id}`)
     if (response.data.success) {
       return response.data.data
     }
@@ -154,8 +403,13 @@ async function fetchNodeById(id) {
 }
 
 async function createNode(nodeData) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return null
+  }
+
   try {
-    const response = await axios.post('/api/nodes', nodeData)
+    const response = await axios.post(`/api/trees/${currentTreeId}/nodes`, nodeData)
     if (response.data.success) {
       await fetchNodes()
       showToast('ノードを追加しました', 'success')
@@ -169,8 +423,13 @@ async function createNode(nodeData) {
 }
 
 async function updateNode(id, nodeData) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return null
+  }
+
   try {
-    const response = await axios.put(`/api/nodes/${id}`, nodeData)
+    const response = await axios.put(`/api/trees/${currentTreeId}/nodes/${id}`, nodeData)
     if (response.data.success) {
       await fetchNodes()
       return response.data.data
@@ -183,12 +442,17 @@ async function updateNode(id, nodeData) {
 }
 
 async function deleteNode(id) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return false
+  }
+
   if (!confirm('このノードを削除しますか？\n（子ノードは削除されません）')) {
     return false
   }
 
   try {
-    const response = await axios.delete(`/api/nodes/${id}`)
+    const response = await axios.delete(`/api/trees/${currentTreeId}/nodes/${id}`)
     if (response.data.success) {
       if (selectedNodeId === id) {
         selectedNodeId = null
@@ -614,7 +878,7 @@ function attachTreeEventListeners() {
         // エディタにノード情報を表示
         fetchNodeById(nodeId).then(node => {
           if (node) {
-            axios.get(`/api/nodes/${nodeId}/parents`).then(parentsRes => {
+            axios.get(`/api/trees/${currentTreeId}/nodes/${nodeId}/parents`).then(parentsRes => {
               const parents = parentsRes.data.success ? parentsRes.data.data : []
               renderEditor(node, parents)
             })
@@ -1031,7 +1295,7 @@ async function selectNode(nodeId, nodePath = null) {
   const node = await fetchNodeById(nodeId)
   if (node) {
     // 親ノードを取得
-    const parentsRes = await axios.get(`/api/nodes/${nodeId}/parents`)
+    const parentsRes = await axios.get(`/api/trees/${currentTreeId}/nodes/${nodeId}/parents`)
     const parents = parentsRes.data.success ? parentsRes.data.data : []
     renderEditor(node, parents)
   }
@@ -1640,7 +1904,34 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', handlePaste)
   document.addEventListener('keydown', handleArrowKeys)
 
-  // 初期データ読み込み
-  fetchVersion()
-  fetchNodes()
+  // 初期データ読み込み（認証とツリーコンテキストチェック）
+  initializeApp()
 })
+
+async function initializeApp() {
+  showLoading()
+
+  // Check authentication
+  const isAuthenticated = await checkAuth()
+  if (!isAuthenticated) {
+    hideLoading()
+    showToast('ログインが必要です', 'error')
+    setTimeout(() => {
+      window.location.href = '/login.html'
+    }, 1500)
+    return
+  }
+
+  // Load tree context and check access
+  const hasTreeAccess = await loadTreeContext()
+  if (!hasTreeAccess) {
+    hideLoading()
+    return // loadTreeContext already handles redirect
+  }
+
+  // Load version and nodes
+  await fetchVersion()
+  await fetchNodes()
+
+  hideLoading()
+}
