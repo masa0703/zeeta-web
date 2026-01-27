@@ -17,7 +17,8 @@
       "Bash(open tests/playwright-report/index.html)",
       "Bash(npm run build:*)",
       "Bash(git mv:*)",
-      "Bash(/bin/sleep:*)"
+      "Bash(/bin/sleep:*)",
+      "Bash(cd /Users/masaharu_mikami/Documents/cloude\\\\ code/zeeta-web && npx tsc:*)"
     ]
   }
 }

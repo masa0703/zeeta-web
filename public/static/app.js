@@ -239,6 +239,8 @@ function disableEditingForViewer() {
     '#node-author',
     '#new-node-title',
     '#new-node-content',
+    '#add-root-btn',
+    '#save-node-btn',
     '#create-node-btn',
     '#update-node-btn',
     '#delete-node-btn',

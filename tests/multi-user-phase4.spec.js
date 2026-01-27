@@ -13,6 +13,8 @@ import { test, expect } from '@playwright/test'
 
 // Test helper functions
 async function testLogin(page, userId = 1) {
+  // Clear cookies and storage before login to ensure clean state
+  await page.context().clearCookies()
   await page.goto(`/auth/test-login?user_id=${userId}`)
   await page.waitForURL('**/my-page.html')
 }
@@ -279,14 +281,32 @@ test.describe('Permissions', () => {
     const url = new URL(page.url())
     const treeId = url.searchParams.get('tree')
 
+    // Logout
+    await page.click('button:has-text("ログアウト")')
+    await page.waitForURL('**/login.html')
+
+    // Login as user 2 to create user record
+    await testLogin(page, 2)
+
+    // Logout
+    await page.click('button:has-text("ログアウト")')
+    await page.waitForURL('**/login.html')
+
+    // Login back as owner
+    await testLogin(page, 1)
+
     // Add user 2 as viewer via API
-    const apiContext = context
-    await page.request.post(`/api/trees/${treeId}/members`, {
+    const addMemberResponse = await page.request.post(`/api/trees/${treeId}/members`, {
       data: {
         user_id: 2,
         role: 'viewer'
       }
     })
+
+    // Check if member was added successfully
+    expect(addMemberResponse.status()).toBe(200)
+    const addMemberData = await addMemberResponse.json()
+    expect(addMemberData.success).toBe(true)
 
     // Logout
     await page.click('button:has-text("ログアウト")')
@@ -323,20 +343,39 @@ test.describe('Permissions', () => {
     const url = new URL(page.url())
     const treeId = url.searchParams.get('tree')
 
+    // Logout
+    await page.click('button:has-text("ログアウト")')
+    await page.waitForURL('**/login.html')
+
+    // Login as user 2 to create user record
+    await testLogin(page, 2)
+
+    // Logout
+    await page.click('button:has-text("ログアウト")')
+    await page.waitForURL('**/login.html')
+
+    // Login back as owner
+    await testLogin(page, 1)
+
     // Add user 2 as viewer
-    await page.request.post(`/api/trees/${treeId}/members`, {
+    const addResponse = await page.request.post(`/api/trees/${treeId}/members`, {
       data: {
         user_id: 2,
         role: 'viewer'
       }
     })
 
+    // Check if member was added successfully
+    expect(addResponse.status()).toBe(200)
+    const addData = await addResponse.json()
+    expect(addData.success).toBe(true)
+
     // Logout and login as viewer
     await page.click('button:has-text("ログアウト")')
     await testLogin(page, 2)
 
     // Try to create a node via API
-    const response = await page.request.post(`/api/trees/${treeId}/nodes`, {
+    const createResponse = await page.request.post(`/api/trees/${treeId}/nodes`, {
       data: {
         title: '不正ノード',
         content: 'テスト',
@@ -345,9 +384,9 @@ test.describe('Permissions', () => {
     })
 
     // Should be rejected with 403
-    expect(response.status()).toBe(403)
-    const data = await response.json()
-    expect(data.error).toContain('permission')
+    expect(createResponse.status()).toBe(403)
+    const createData = await createResponse.json()
+    expect(createData.error).toContain('permission')
   })
 })
 
