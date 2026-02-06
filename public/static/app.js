@@ -356,6 +356,19 @@ function updateTreeHeader() {
         ${roleLabels[currentUserRole] || currentUserRole}
       </span>
       ${currentUserRole === 'viewer' ? '<span style="color: #e53e3e; font-size: 0.875rem; font-weight: 500;">閲覧専用</span>' : ''}
+      <button onclick="reloadTreeData()" style="
+        background: none;
+        border: none;
+        color: #718096;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: color 0.2s, background 0.2s;
+      " onmouseover="this.style.color='#667eea'; this.style.background='#edf2f7';"
+         onmouseout="this.style.color='#718096'; this.style.background='none';"
+         title="ツリーを再読み込み">
+        <i class="fas fa-sync-alt"></i>
+      </button>
     </div>
   `
 
@@ -446,6 +459,22 @@ async function fetchVersion() {
     }
   } catch (error) {
     console.error('Failed to fetch version:', error)
+  }
+}
+
+/**
+ * Reload tree data (nodes and relations)
+ */
+async function reloadTreeData() {
+  showLoading()
+  try {
+    await fetchNodes()
+    showToast('ツリーを再読み込みしました', 'success')
+  } catch (error) {
+    console.error('Failed to reload tree:', error)
+    showToast('再読み込みに失敗しました', 'error')
+  } finally {
+    hideLoading()
   }
 }
 
@@ -1058,7 +1087,7 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
           <span class="w-3 mr-2"></span>
         `}
         <i class="fas fa-file-alt text-blue-500 mr-2"></i>
-        <span class="flex-1 text-sm">${title}</span>
+        <span class="flex-1 text-sm truncate" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">${title}</span>
         ${hasMultipleParents ? `
           <span class="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded mr-2" title="複数の親を持つノード">
             <i class="fas fa-link"></i> ${node.parents.length}

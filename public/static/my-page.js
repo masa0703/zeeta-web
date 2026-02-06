@@ -111,7 +111,6 @@ function displayTrees(trees) {
   if (myTrees.length === 0) {
     myTreesGrid.innerHTML = `
       <div class="col-span-full empty-state">
-        <i class="fas fa-folder-open"></i>
         <p class="text-lg font-medium">まだツリーがありません</p>
         <p class="text-sm">「新しいツリーを作成」ボタンから始めましょう</p>
       </div>
@@ -164,6 +163,13 @@ function createTreeCard(tree) {
             >
               <i class="fas fa-pencil-alt text-sm"></i>
             </button>
+            <button
+              onclick="event.stopPropagation(); confirmDeleteTree(${tree.id}, '${escapeHtml(tree.name).replace(/'/g, "\\'")}')"
+              class="text-gray-400 hover:text-red-600"
+              title="ツリーを削除"
+            >
+              <i class="fas fa-trash-alt text-sm"></i>
+            </button>
           ` : ''}
         </div>
         <span class="role-badge ${roleClass}">${roleName}</span>
@@ -203,11 +209,34 @@ function openTree(treeId) {
 }
 
 /**
- * Edit tree name
+ * Open edit tree name modal
  */
-async function editTreeName(treeId, currentName) {
-  const newName = prompt('新しいツリー名を入力してください:', currentName)
-  if (!newName || newName.trim() === '' || newName.trim() === currentName) {
+function editTreeName(treeId, currentName) {
+  document.getElementById('edit-tree-id').value = treeId
+  document.getElementById('edit-tree-name').value = currentName
+  document.getElementById('edit-tree-modal').classList.add('active')
+  document.getElementById('edit-tree-name').focus()
+  document.getElementById('edit-tree-name').select()
+}
+
+/**
+ * Close edit tree name modal
+ */
+function closeEditTreeModal() {
+  document.getElementById('edit-tree-modal').classList.remove('active')
+  document.getElementById('edit-tree-form').reset()
+}
+
+/**
+ * Submit edit tree name
+ */
+async function submitEditTreeName(event) {
+  event.preventDefault()
+
+  const treeId = document.getElementById('edit-tree-id').value
+  const newName = document.getElementById('edit-tree-name').value.trim()
+
+  if (!newName) {
     return
   }
 
@@ -217,20 +246,62 @@ async function editTreeName(treeId, currentName) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name: newName.trim() })
+      body: JSON.stringify({ name: newName })
     })
 
     const data = await response.json()
 
     if (data.success) {
-      // Reload trees to show updated name
+      closeEditTreeModal()
       await loadTrees()
     } else {
-      alert('ツリー名の更新に失敗しました: ' + (data.error || 'Unknown error'))
+      showError('ツリー名の更新に失敗しました: ' + (data.error || 'Unknown error'))
     }
   } catch (error) {
     console.error('Failed to update tree name:', error)
-    alert('ツリー名の更新に失敗しました')
+    showError('ツリー名の更新に失敗しました')
+  }
+}
+
+/**
+ * Open delete tree confirmation modal
+ */
+function confirmDeleteTree(treeId, treeName) {
+  document.getElementById('delete-tree-id').value = treeId
+  document.getElementById('delete-tree-name').textContent = treeName
+  document.getElementById('delete-tree-modal').classList.add('active')
+}
+
+/**
+ * Close delete tree modal
+ */
+function closeDeleteTreeModal() {
+  document.getElementById('delete-tree-modal').classList.remove('active')
+}
+
+/**
+ * Execute tree deletion
+ */
+async function executeDeleteTree() {
+  const treeId = document.getElementById('delete-tree-id').value
+
+  try {
+    const response = await fetch(`/api/trees/${treeId}`, {
+      method: 'DELETE'
+    })
+
+    const data = await response.json()
+
+    if (data.success) {
+      closeDeleteTreeModal()
+      await loadTrees()
+      showSuccess('ツリーを削除しました')
+    } else {
+      showError('ツリーの削除に失敗しました: ' + (data.error || 'Unknown error'))
+    }
+  } catch (error) {
+    console.error('Failed to delete tree:', error)
+    showError('ツリーの削除に失敗しました')
   }
 }
 

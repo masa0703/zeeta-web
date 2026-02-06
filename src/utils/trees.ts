@@ -43,7 +43,7 @@ export async function getUserTrees(db: D1Database, userId: number): Promise<Tree
       FROM trees t
       JOIN tree_members tm ON t.id = tm.tree_id
       LEFT JOIN users u ON t.owner_user_id = u.id
-      WHERE tm.user_id = ?
+      WHERE tm.user_id = ? AND (t.is_deleted = 0 OR t.is_deleted IS NULL)
       ORDER BY t.updated_at DESC`
     )
     .bind(userId)
@@ -59,7 +59,7 @@ export async function getUserTrees(db: D1Database, userId: number): Promise<Tree
  * @returns Tree or null if not found
  */
 export async function getTreeById(db: D1Database, treeId: number): Promise<Tree | null> {
-  const tree = await db.prepare('SELECT * FROM trees WHERE id = ?').bind(treeId).first()
+  const tree = await db.prepare('SELECT * FROM trees WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)').bind(treeId).first()
 
   return tree as Tree | null
 }
@@ -156,13 +156,13 @@ export async function updateTree(
 }
 
 /**
- * Delete a tree and all its associated data
+ * Soft delete a tree (set is_deleted flag)
  * @param db - D1 Database instance
  * @param treeId - Tree ID
  */
 export async function deleteTree(db: D1Database, treeId: number): Promise<void> {
-  // CASCADE delete will handle tree_members, nodes, node_relations
-  await db.prepare('DELETE FROM trees WHERE id = ?').bind(treeId).run()
+  // Soft delete: set is_deleted flag instead of actually deleting
+  await db.prepare('UPDATE trees SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(treeId).run()
 }
 
 /**
