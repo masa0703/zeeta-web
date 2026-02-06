@@ -17,6 +17,8 @@ let searchQuery = ''
 let searchResults = []
 let clipboard = null // コピーしたノードのID
 let treeViewMode = 'normal' // 'normal' or 'reverse'
+let isDirty = false // 未保存の変更があるかどうか
+let initialNodeValues = null // 編集開始時の初期値
 
 // ===============================
 // ユーティリティ関数
@@ -195,6 +197,168 @@ function showPrompt(message, defaultValue = '') {
     okBtn.addEventListener('click', handleOk)
     overlay.addEventListener('click', handleCancel)
   })
+}
+
+// 未保存確認モーダル
+function showUnsavedConfirm() {
+  return new Promise((resolve) => {
+    // モーダルを作成
+    let modal = document.getElementById('unsaved-confirm-modal')
+    if (!modal) {
+      modal = document.createElement('div')
+      modal.id = 'unsaved-confirm-modal'
+      modal.innerHTML = `
+        <div class="confirm-overlay"></div>
+        <div class="confirm-dialog">
+          <div class="confirm-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="confirm-message">変更内容を保存しますか？</div>
+          <div class="confirm-sub">保存せずに他のノードに移動すると、変更は失われます。</div>
+          <div class="confirm-buttons">
+            <button type="button" class="confirm-no">いいえ</button>
+            <button type="button" class="confirm-yes">はい</button>
+          </div>
+        </div>
+      `
+      document.body.appendChild(modal)
+
+      // スタイルを追加
+      const style = document.createElement('style')
+      style.textContent = `
+        #unsaved-confirm-modal {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 10000;
+        }
+        #unsaved-confirm-modal .confirm-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+        }
+        #unsaved-confirm-modal .confirm-dialog {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          border-radius: 12px;
+          padding: 32px;
+          min-width: 360px;
+          max-width: 90%;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+          text-align: center;
+        }
+        #unsaved-confirm-modal .confirm-icon {
+          font-size: 48px;
+          color: #f59e0b;
+          margin-bottom: 16px;
+        }
+        #unsaved-confirm-modal .confirm-message {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 8px;
+        }
+        #unsaved-confirm-modal .confirm-sub {
+          font-size: 14px;
+          color: #6b7280;
+          margin-bottom: 24px;
+        }
+        #unsaved-confirm-modal .confirm-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+        }
+        #unsaved-confirm-modal .confirm-no {
+          padding: 12px 32px;
+          font-size: 15px;
+          font-weight: 500;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          background: #e5e7eb;
+          color: #374151;
+          transition: background 0.2s;
+        }
+        #unsaved-confirm-modal .confirm-no:hover {
+          background: #d1d5db;
+        }
+        #unsaved-confirm-modal .confirm-yes {
+          padding: 12px 32px;
+          font-size: 15px;
+          font-weight: 500;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          background: #3b82f6;
+          color: white;
+          transition: background 0.2s;
+        }
+        #unsaved-confirm-modal .confirm-yes:hover {
+          background: #2563eb;
+        }
+      `
+      document.head.appendChild(style)
+    }
+
+    const yesBtn = modal.querySelector('.confirm-yes')
+    const noBtn = modal.querySelector('.confirm-no')
+    const overlay = modal.querySelector('.confirm-overlay')
+
+    modal.style.display = 'block'
+
+    function cleanup() {
+      modal.style.display = 'none'
+      yesBtn.removeEventListener('click', handleYes)
+      noBtn.removeEventListener('click', handleNo)
+      overlay.removeEventListener('click', handleNo)
+    }
+
+    function handleYes() {
+      cleanup()
+      resolve('yes')
+    }
+
+    function handleNo() {
+      cleanup()
+      resolve('no')
+    }
+
+    yesBtn.addEventListener('click', handleYes)
+    noBtn.addEventListener('click', handleNo)
+    overlay.addEventListener('click', handleNo)
+  })
+}
+
+// 編集内容に変更があるかチェック
+function checkDirty() {
+  if (!selectedNodeId || !initialNodeValues) {
+    isDirty = false
+    return false
+  }
+
+  const titleEl = document.getElementById('node-title')
+  const authorEl = document.getElementById('node-author')
+  const currentContent = window.currentEditor ? window.currentEditor.value() : ''
+
+  const currentTitle = titleEl ? titleEl.value : ''
+  const currentAuthor = authorEl ? authorEl.value : ''
+
+  isDirty = (
+    currentTitle !== initialNodeValues.title ||
+    currentContent !== initialNodeValues.content ||
+    currentAuthor !== initialNodeValues.author
+  )
+
+  return isDirty
 }
 
 // トースト通知の表示
@@ -1115,7 +1279,7 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
 function attachTreeEventListeners() {
   // ノード選択
   document.querySelectorAll('.tree-item').forEach(item => {
-    item.addEventListener('click', (e) => {
+    item.addEventListener('click', async (e) => {
       if (e.target.classList.contains('toggle-icon') ||
         e.target.classList.contains('add-child-btn') ||
         e.target.closest('.add-child-btn') ||
@@ -1125,6 +1289,21 @@ function attachTreeEventListeners() {
 
       const nodeId = parseInt(item.dataset.nodeId)
       const nodePath = item.dataset.nodePath
+
+      // 同じノードを選択した場合は何もしない
+      if (selectedNodePath === nodePath) {
+        return
+      }
+
+      // 未保存の変更がある場合は確認
+      if (checkDirty()) {
+        const answer = await showUnsavedConfirm()
+        if (answer === 'yes') {
+          // 保存してから切り替え
+          await saveCurrentNode()
+        }
+        // 'no' の場合はそのまま切り替え（変更を破棄）
+      }
 
       // 逆ツリーモードでは、ルートノード（selectedNodeId）を変更しない
       // 選択したノードは詳細表示のためだけに選択状態にする
@@ -1579,8 +1758,18 @@ function renderEditor(node = null, parents = []) {
       </div>
     `
     selectedNodeVersion = null
+    initialNodeValues = null
+    isDirty = false
     return
   }
+
+  // 初期値を保存（未保存チェック用）
+  initialNodeValues = {
+    title: node.title || '',
+    content: node.content || '',
+    author: node.author || ''
+  }
+  isDirty = false
 
   // Store current node version for optimistic locking
   selectedNodeVersion = node.version || 1
@@ -1691,6 +1880,10 @@ function renderEditor(node = null, parents = []) {
   document.getElementById('save-node-btn').addEventListener('click', () => saveCurrentNode())
   document.getElementById('delete-node-btn').addEventListener('click', () => deleteCurrentNode())
 
+  // 変更監視
+  document.getElementById('node-title').addEventListener('input', checkDirty)
+  document.getElementById('node-author').addEventListener('change', checkDirty)
+
   // 親削除ボタン
   document.querySelectorAll('.remove-parent-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -1740,6 +1933,9 @@ function renderEditor(node = null, parents = []) {
       return plainText
     }
   })
+
+  // EasyMDEの変更監視
+  window.currentEditor.codemirror.on('change', checkDirty)
 }
 
 async function saveCurrentNode() {
@@ -1752,21 +1948,26 @@ async function saveCurrentNode() {
 
   if (!title) {
     showToast('タイトルを入力してください', 'error')
-    return
+    return false
   }
 
   if (!author) {
     showToast('作成者を入力してください', 'error')
-    return
+    return false
   }
 
   showLoading()
   try {
     const updated = await updateNode(selectedNodeId, { title, content, author, version: selectedNodeVersion })
     if (updated) {
+      // 初期値を更新してダーティフラグをリセット
+      initialNodeValues = { title, content, author }
+      isDirty = false
       showToast('保存しました', 'success')
       await selectNode(selectedNodeId) // リロード (新しいバージョンを取得)
+      return true
     }
+    return false
   } finally {
     hideLoading()
   }
@@ -2000,7 +2201,7 @@ function getVisibleNodeElements() {
   return visibleElements
 }
 
-function handleArrowKeys(e) {
+async function handleArrowKeys(e) {
   // 入力フィールドにフォーカスがある場合はスキップ
   if (document.activeElement.tagName === 'INPUT' ||
     document.activeElement.tagName === 'TEXTAREA') {
@@ -2012,7 +2213,23 @@ function handleArrowKeys(e) {
     return
   }
 
+  // 上下キーでノード切り替え時のみ未保存チェック
+  if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && checkDirty()) {
+    e.preventDefault()
+    const answer = await showUnsavedConfirm()
+    if (answer === 'yes') {
+      await saveCurrentNode()
+    }
+    // 'no' の場合は変更を破棄して移動
+    handleArrowKeysInternal(e.key)
+    return
+  }
+
   e.preventDefault()
+  handleArrowKeysInternal(e.key)
+}
+
+function handleArrowKeysInternal(key) {
 
   const visibleElements = getVisibleNodeElements()
   if (visibleElements.length === 0) return
@@ -2064,7 +2281,7 @@ function handleArrowKeys(e) {
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId)
 
-  switch (e.key) {
+  switch (key) {
     case 'ArrowUp':
       // 上のノードを選択
       if (currentIndex > 0) {
