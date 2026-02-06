@@ -12,11 +12,16 @@
 - **デフォルト作成者**: ノード新規作成時にログインユーザーを自動設定
 - **保存ショートカット**: Cmd/Ctrl + Enter で保存可能、ツールチップ表示
 - **UI改善**: タイトル入力欄のフォントサイズ拡大
+- **注意書きバナー**: S010マイページに利用上の注意を追加
+- **ドキュメント整理**: docs/フォルダをarchitecture/guides/testing/に再構成
+- **画面定義書更新**: ID体系（S010〜S100）を導入、全画面の仕様を最新化
 
 ### 修正ファイル
 - `src/index.tsx` - OAuth リダイレクトパラメータ対応
 - `public/login.html` - リダイレクトURL処理
 - `public/static/app.js` - 作成者ドロップダウン、ショートカット、UI改善
+- `public/my-page.html` - 注意書きバナー追加
+- `docs/architecture/screen-definition.md` - 画面定義書を全面更新
 
 ### テスト結果
 - **成功**: 8/8 (100%)

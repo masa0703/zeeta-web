@@ -1522,14 +1522,16 @@ function renderEditor(node = null, parents = []) {
       <div class="flex-shrink-0 mb-3">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-800">ノード詳細</h2>
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-start">
             <button id="delete-node-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
               <i class="fas fa-trash mr-2"></i>削除
             </button>
-            <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    title="保存 (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)">
-              <i class="fas fa-save mr-2"></i>保存
-            </button>
+            <div class="text-center">
+              <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <i class="fas fa-save mr-2"></i>保存
+              </button>
+              <p class="text-xs text-gray-400 mt-1">${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter</p>
+            </div>
           </div>
         </div>
       </div>

@@ -18,7 +18,13 @@
       "Bash(npm run build:*)",
       "Bash(git mv:*)",
       "Bash(/bin/sleep:*)",
-      "Bash(cd /Users/masaharu_mikami/Documents/cloude\\\\ code/zeeta-web && npx tsc:*)"
+      "Bash(cd /Users/masaharu_mikami/Documents/cloude\\\\ code/zeeta-web && npx tsc:*)",
+      "Bash(xargs cat:*)",
+      "Bash(npm run:*)",
+      "Bash(chmod:*)",
+      "Bash(dig:*)",
+      "Bash(nslookup:*)",
+      "Bash(lsof:*)"
     ]
   }
 }
