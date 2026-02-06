@@ -46,6 +46,157 @@ function hideLoading() {
   }
 }
 
+// カスタムプロンプトモーダル
+function showPrompt(message, defaultValue = '') {
+  return new Promise((resolve) => {
+    // モーダルを作成
+    let modal = document.getElementById('custom-prompt-modal')
+    if (!modal) {
+      modal = document.createElement('div')
+      modal.id = 'custom-prompt-modal'
+      modal.innerHTML = `
+        <div class="prompt-overlay"></div>
+        <div class="prompt-dialog">
+          <div class="prompt-message"></div>
+          <input type="text" class="prompt-input" />
+          <div class="prompt-buttons">
+            <button type="button" class="prompt-cancel">キャンセル</button>
+            <button type="button" class="prompt-ok">OK</button>
+          </div>
+        </div>
+      `
+      document.body.appendChild(modal)
+
+      // スタイルを追加
+      const style = document.createElement('style')
+      style.textContent = `
+        #custom-prompt-modal {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 10000;
+        }
+        #custom-prompt-modal .prompt-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+        }
+        #custom-prompt-modal .prompt-dialog {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          border-radius: 8px;
+          padding: 24px;
+          min-width: 400px;
+          max-width: 90%;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        #custom-prompt-modal .prompt-message {
+          font-size: 16px;
+          color: #333;
+          margin-bottom: 16px;
+        }
+        #custom-prompt-modal .prompt-input {
+          width: 100%;
+          font-size: 16px;
+          padding: 12px;
+          border: 2px solid #e2e8f0;
+          border-radius: 6px;
+          box-sizing: border-box;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        #custom-prompt-modal .prompt-input:focus {
+          border-color: #667eea;
+        }
+        #custom-prompt-modal .prompt-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 20px;
+        }
+        #custom-prompt-modal .prompt-cancel {
+          padding: 10px 20px;
+          font-size: 14px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          background: #e2e8f0;
+          color: #4a5568;
+        }
+        #custom-prompt-modal .prompt-cancel:hover {
+          background: #cbd5e0;
+        }
+        #custom-prompt-modal .prompt-ok {
+          padding: 10px 20px;
+          font-size: 14px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          background: #667eea;
+          color: white;
+        }
+        #custom-prompt-modal .prompt-ok:hover {
+          background: #5a67d8;
+        }
+      `
+      document.head.appendChild(style)
+    }
+
+    const messageEl = modal.querySelector('.prompt-message')
+    const inputEl = modal.querySelector('.prompt-input')
+    const cancelBtn = modal.querySelector('.prompt-cancel')
+    const okBtn = modal.querySelector('.prompt-ok')
+    const overlay = modal.querySelector('.prompt-overlay')
+
+    messageEl.textContent = message
+    inputEl.value = defaultValue
+
+    modal.style.display = 'block'
+    inputEl.focus()
+    inputEl.select()
+
+    function cleanup() {
+      modal.style.display = 'none'
+      inputEl.removeEventListener('keydown', handleKeydown)
+      cancelBtn.removeEventListener('click', handleCancel)
+      okBtn.removeEventListener('click', handleOk)
+      overlay.removeEventListener('click', handleCancel)
+    }
+
+    function handleCancel() {
+      cleanup()
+      resolve(null)
+    }
+
+    function handleOk() {
+      cleanup()
+      resolve(inputEl.value)
+    }
+
+    function handleKeydown(e) {
+      if (e.key === 'Enter') {
+        handleOk()
+      } else if (e.key === 'Escape') {
+        handleCancel()
+      }
+    }
+
+    inputEl.addEventListener('keydown', handleKeydown)
+    cancelBtn.addEventListener('click', handleCancel)
+    okBtn.addEventListener('click', handleOk)
+    overlay.addEventListener('click', handleCancel)
+  })
+}
+
 // トースト通知の表示
 function showToast(message, type = 'success', duration = 5000) {
   const toast = document.createElement('div')
@@ -1695,7 +1846,7 @@ async function deleteCurrentNode() {
 // ノード追加
 // ===============================
 async function addRootNode() {
-  const title = prompt('ルートノードのタイトルを入力してください:')
+  const title = await showPrompt('ルートノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
   // Use current user as default author
@@ -1720,7 +1871,7 @@ async function addRootNode() {
 }
 
 async function addChildNode(parentId) {
-  const title = prompt('子ノードのタイトルを入力してください:')
+  const title = await showPrompt('子ノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
   // Use current user as default author
