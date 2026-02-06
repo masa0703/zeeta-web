@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マイページ - Zeeta Web</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tree-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .tree-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .role-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .role-owner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .role-editor {
+      background: #48bb78;
+      color: white;
+    }
+
+    .role-viewer {
+      background: #4299e1;
+      color: white;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #718096;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Notification Bell Styles */
+    .notification-bell {
+      position: relative;
+      cursor: pointer;
+      font-size: 1.25rem;
+      color: #4a5568;
+      transition: color 0.3s ease;
+    }
+
+    .notification-bell:hover {
+      color: #667eea;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .notification-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      width: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .notification-dropdown.active {
+      display: block;
+    }
+
+    .notification-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .notification-item {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f7fafc;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .notification-item:hover {
+      background-color: #f7fafc;
+    }
+
+    .notification-item.unread {
+      background-color: #eef2ff;
+    }
+
+    .notification-item.unread:hover {
+      background-color: #e0e7ff;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 0.25rem;
+    }
+
+    .notification-message {
+      font-size: 0.875rem;
+      color: #4a5568;
+      margin-bottom: 0.5rem;
+    }
+
+    .notification-time {
+      font-size: 0.75rem;
+      color: #a0aec0;
+    }
+
+    .notification-empty {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: #718096;
+    }
+
+    .notification-container {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div class="logo">Zeeta Web</div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Notification Bell -->
+        <div class="notification-container">
+          <div class="notification-bell" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+          </div>
+
+          <!-- Notification Dropdown -->
+          <div id="notification-dropdown" class="notification-dropdown">
+            <div class="notification-header">
+              <h4 class="font-semibold text-gray-800">通知</h4>
+              <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800">
+                すべて既読
+              </button>
+            </div>
+            <div id="notification-list">
+              <!-- Notifications will be inserted here -->
+              <div class="notification-empty">
+                <i class="fas fa-bell-slash text-4xl mb-2 opacity-50"></i>
+                <p>通知はありません</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Link -->
+        <a href="/profile.html" class="text-gray-600 hover:text-gray-800 px-3 py-2" title="プロフィール設定">
+          <i class="fas fa-user-cog"></i>
+        </a>
+
+        <!-- User Info -->
+        <div class="flex items-center space-x-3">
+          <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full" style="display: none;">
+          <div>
+            <div id="user-name" class="text-sm font-semibold text-gray-800"></div>
+            <div id="user-email" class="text-xs text-gray-500"></div>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <button onclick="logout()" class="text-gray-600 hover:text-gray-800 px-3 py-2">
+          <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Notice Banner -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+      <div class="flex items-start">
+        <i class="fas fa-info-circle text-yellow-600 mt-0.5 mr-3"></i>
+        <p class="text-sm text-yellow-800">
+          これは、親を複数持てるツリー構造の有用性を試していただく目的で公開しています。いつまで継続するかも未定ですし、DBの内容は作者が簡単に覗けるため、重要な情報は入れないでください。
+        </p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <p class="text-center text-gray-600">読み込み中...</p>
+    </div>
+
+    <!-- Trees Container -->
+    <div id="trees-container" style="display: none;">
+      <!-- My Trees Section -->
+      <section class="mb-12">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">マイツリー</h2>
+          <button onclick="openCreateTreeModal()" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>新しいツリーを作成
+          </button>
+        </div>
+        <div id="my-trees-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Tree cards will be inserted here -->
+        </div>
+      </section>
+
+      <!-- Shared Trees Section -->
+      <section>
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">共有されたツリー</h2>
+        <div id="shared-trees-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Tree cards will be inserted here -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Create Tree Modal -->
+  <div id="create-tree-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-gray-800">新しいツリーを作成</h3>
+        <button onclick="closeCreateTreeModal()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <form id="create-tree-form" onsubmit="createTree(event)">
+        <div class="mb-4">
+          <label for="tree-name" class="block text-sm font-medium text-gray-700 mb-2">
+            ツリー名 <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="tree-name"
+            name="name"
+            required
+            maxlength="100"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="例: プロジェクトアルファ"
+          >
+        </div>
+
+        <div class="mb-6">
+          <label for="tree-description" class="block text-sm font-medium text-gray-700 mb-2">
+            説明（任意）
+          </label>
+          <textarea
+            id="tree-description"
+            name="description"
+            rows="3"
+            maxlength="500"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="このツリーについての説明を入力..."
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button type="button" onclick="closeCreateTreeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+            キャンセル
+          </button>
+          <button type="submit" class="btn-primary">
+            作成
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Member Management Modal -->
+  <div id="member-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-gray-800">メンバー管理</h3>
+        <button onclick="closeMemberModal()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Invite Section -->
+      <div id="invite-section" class="mb-6 p-4 bg-gray-50 rounded-lg" style="display: none;">
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">メールで招待</h4>
+        <form id="invite-form" onsubmit="sendInvitation(event)" class="flex items-end space-x-2">
+          <div class="flex-1">
+            <input
+              type="email"
+              id="invite-email"
+              name="email"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="example@email.com"
+            >
+          </div>
+          <div>
+            <select
+              id="invite-role"
+              name="role"
+              class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="editor">編集者</option>
+              <option value="viewer">閲覧者</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            招待
+          </button>
+        </form>
+      </div>
+
+      <!-- Pending Invitations List -->
+      <div id="pending-invitations-section" style="display: none;">
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">招待中</h4>
+        <div id="pending-invitations-list" class="space-y-2 mb-6">
+          <!-- Pending invitation items will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Current Members List -->
+      <div>
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">現在のメンバー</h4>
+        <div id="members-list" class="space-y-3">
+          <!-- Member items will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/notifications.js"></script>
+  <script src="/static/my-page.js"></script>
+</body>
+</html>

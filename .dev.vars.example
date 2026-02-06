@@ -1,0 +1,23 @@
+# Development Environment Variables
+# Copy this file to .dev.vars and fill in your values
+
+# JWT Secret (minimum 32 characters)
+JWT_SECRET=your-jwt-secret-here-minimum-32-characters-recommended-to-use-crypto-random-bytes
+
+# Google OAuth Configuration
+# Get these from: https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# GitHub OAuth Configuration
+# Get these from: https://github.com/settings/developers
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# Application URL (for OAuth redirects)
+APP_URL=http://localhost:8787
+
+# Mailgun Configuration (for sending invitation emails)
+# Get these from: https://app.mailgun.com/app/sending/domains
+MAILGUN_API_KEY=your-mailgun-api-key-here
+MAILGUN_DOMAIN=mail.zeetaweb.jp

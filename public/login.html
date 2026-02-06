@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン - Zeeta Web</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    .oauth-button {
+      transition: all 0.3s ease;
+      border: 2px solid #e2e8f0;
+    }
+
+    .oauth-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .google-button {
+      background-color: white;
+      color: #4285f4;
+    }
+
+    .google-button:hover {
+      background-color: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+
+    .github-button {
+      background-color: white;
+      color: #333;
+    }
+
+    .github-button:hover {
+      background-color: #333;
+      color: white;
+      border-color: #333;
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <!-- Logo and Title -->
+    <div class="text-center mb-8">
+      <div class="logo mb-2">Zeeta Web</div>
+      <p class="text-gray-600 text-sm">Collaborative Outline Editor</p>
+    </div>
+
+    <!-- Login Buttons -->
+    <div id="login-buttons" class="space-y-4">
+      <button
+        onclick="loginWithGoogle()"
+        class="oauth-button google-button w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium"
+      >
+        <i class="fab fa-google mr-3 text-xl"></i>
+        Googleでログイン
+      </button>
+
+      <button
+        onclick="loginWithGitHub()"
+        class="oauth-button github-button w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium"
+      >
+        <i class="fab fa-github mr-3 text-xl"></i>
+        GitHubでログイン
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden text-center">
+      <div class="spinner mb-4"></div>
+      <p class="text-gray-600">認証中...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <p class="text-red-600 text-sm"></p>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-gray-500">
+      <p>ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。</p>
+    </div>
+  </div>
+
+  <script>
+    function showLoading() {
+      document.getElementById('login-buttons').classList.add('hidden')
+      document.getElementById('loading-state').classList.remove('hidden')
+      document.getElementById('error-message').classList.add('hidden')
+    }
+
+    function showError(message) {
+      document.getElementById('login-buttons').classList.remove('hidden')
+      document.getElementById('loading-state').classList.add('hidden')
+      const errorDiv = document.getElementById('error-message')
+      errorDiv.classList.remove('hidden')
+      errorDiv.querySelector('p').textContent = message
+    }
+
+    // Get redirect URL from query params (e.g., from invitation flow)
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectUrl = urlParams.get('redirect')
+
+    function loginWithGoogle() {
+      showLoading()
+      const url = redirectUrl
+        ? `/auth/login/google?redirect=${encodeURIComponent(redirectUrl)}`
+        : '/auth/login/google'
+      window.location.href = url
+    }
+
+    function loginWithGitHub() {
+      showLoading()
+      const url = redirectUrl
+        ? `/auth/login/github?redirect=${encodeURIComponent(redirectUrl)}`
+        : '/auth/login/github'
+      window.location.href = url
+    }
+
+    // Check for error in URL params (from OAuth callback failure)
+    const error = urlParams.get('error')
+    if (error) {
+      showError('認証に失敗しました。もう一度お試しください。')
+    }
+
+    // Check if user is already authenticated
+    async function checkAuth() {
+      try {
+        const response = await fetch('/auth/me')
+        if (response.ok) {
+          // User is already authenticated, redirect to original URL or My Page
+          window.location.href = redirectUrl || '/my-page.html'
+        }
+      } catch (error) {
+        // User is not authenticated, stay on login page
+      }
+    }
+
+    // Check auth on page load
+    checkAuth()
+  </script>
+</body>
+</html>

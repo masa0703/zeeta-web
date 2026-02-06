@@ -1,24 +1,24 @@
 {
   "main": {
-    "id": "8c43737f7807330c",
+    "id": "57f61510b97cbb26",
     "type": "split",
     "children": [
       {
-        "id": "673c4f0a02c4ce9c",
+        "id": "559e84da44a3609c",
         "type": "tabs",
         "children": [
           {
-            "id": "bed0903dc90a73ee",
+            "id": "ec0cc3bcf38d912e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/development-rules.md",
+                "file": "docs/TODO.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "development-rules"
+              "title": "TODO"
             }
           }
         ]
@@ -27,15 +27,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "d79fdbe4d6cc6134",
+    "id": "f824174bc7c6db58",
     "type": "split",
     "children": [
       {
-        "id": "4d2628bcc6e55644",
+        "id": "52c39e107d798fcd",
         "type": "tabs",
         "children": [
           {
-            "id": "f8d095ae290d95fd",
+            "id": "66b49b9b9a28e0bb",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -48,7 +48,7 @@
             }
           },
           {
-            "id": "4ea9c247cf9d8431",
+            "id": "bf259d005676f91f",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -65,7 +65,7 @@
             }
           },
           {
-            "id": "c87997d7909852a1",
+            "id": "68cc5f43ed15c4b7",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -78,23 +78,23 @@
       }
     ],
     "direction": "horizontal",
-    "width": 205.5
+    "width": 300
   },
   "right": {
-    "id": "b6c95b7d0f40c993",
+    "id": "96cdbde84450f309",
     "type": "split",
     "children": [
       {
-        "id": "47f46924e52b4b73",
+        "id": "a6681d04e285264f",
         "type": "tabs",
         "children": [
           {
-            "id": "a043397aeffc32bc",
+            "id": "65a202e590abeb18",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/screen-definition.md",
+                "file": "docs/test-cases.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,25 +104,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "screen-definitionへのバックリンク"
+              "title": "test-casesへのバックリンク"
             }
           },
           {
-            "id": "d8b6d1add4383049",
+            "id": "89539bdbec3677cd",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/screen-definition.md",
+                "file": "docs/test-cases.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "screen-definitionからのアウトゴーイングリンク"
+              "title": "test-casesからのアウトゴーイングリンク"
             }
           },
           {
-            "id": "5c85d698850242ef",
+            "id": "4c85c435a84fcde8",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -137,7 +137,7 @@
             }
           },
           {
-            "id": "7f643560276d847c",
+            "id": "6ff5dd3d55f91689",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -151,18 +151,18 @@
             }
           },
           {
-            "id": "5cff64fdc4e92612",
+            "id": "39c9a2ef60ecceb2",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/screen-definition.md",
+                "file": "docs/test-cases.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "screen-definitionのアウトライン"
+              "title": "test-casesのアウトライン"
             }
           }
         ]
@@ -183,11 +183,44 @@
       "bases:Create new base": false
     }
   },
-  "active": "bed0903dc90a73ee",
+  "active": "ec0cc3bcf38d912e",
   "lastOpenFiles": [
-    "docs/design.md",
-    "docs/database-schema.md",
-    "docs/development-rules.md",
-    "docs/screen-definition.md"
+    "docs/MEMORY.md",
+    "docs/README.md",
+    "docs/testing/reports/2026-02-06.md",
+    "docs/testing/test-plan-phase8.md",
+    "docs/testing/test-plan-phase6.md",
+    "docs/testing/test-plan-phase4.md",
+    "docs/testing/test-plan-phase13.md",
+    "docs/testing/test-plan-phase11.md",
+    "docs/testing/test-plan-phase10.md",
+    "docs/testing/test-cases.md",
+    "docs/guides/email-troubleshooting.md",
+    "docs/guides/phase1-setup-guide.md",
+    "docs/guides/development-rules.md",
+    "docs/guides/development-guide.md",
+    "docs/architecture/multi-user/implementation-summary.md",
+    "docs/architecture/multi-user/implementation-plan.md",
+    "docs/architecture/screen-definition.md",
+    "docs/architecture/database-schema.md",
+    "docs/architecture/api-specification.md",
+    "docs/architecture/design.md",
+    "docs/testing/reports",
+    "docs/testing",
+    "docs/guides",
+    "docs/architecture/multi-user",
+    "docs/architecture",
+    "docs/test-reports/2026-02-06.md",
+    "docs/CHANGELOG.md",
+    "docs/test-reports",
+    "tests/test-results",
+    "tests/todo-2026-02-06.spec.js",
+    "docs/test-plan-todo-2026-02-06.md",
+    "docs/test-plan-phase13.md",
+    "docs/TODO.md",
+    "docs/test-cases.md",
+    "src/services/email.ts.tmp.14992.1769735850241",
+    "tests/playwright-report/data",
+    "dist/static/favicon.png"
   ]
 }
