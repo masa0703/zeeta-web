@@ -13,6 +13,7 @@ export interface JWTPayload {
   email: string
   display_name: string
   avatar_url?: string
+  oauth_provider: string
   iat: number  // Issued at (seconds since epoch)
   exp: number  // Expiration (seconds since epoch)
 }
@@ -30,6 +31,7 @@ export async function generateJWT(
     email: string
     display_name: string
     avatar_url?: string
+    oauth_provider: string
   },
   secret: string,
   expiresInSeconds: number = 30 * 24 * 60 * 60 // 30 days
@@ -41,6 +43,7 @@ export async function generateJWT(
     email: user.email,
     display_name: user.display_name || '',
     avatar_url: user.avatar_url,
+    oauth_provider: user.oauth_provider,
     iat: now,
     exp: now + expiresInSeconds
   }

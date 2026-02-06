@@ -140,18 +140,27 @@
       errorDiv.querySelector('p').textContent = message
     }
 
+    // Get redirect URL from query params (e.g., from invitation flow)
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectUrl = urlParams.get('redirect')
+
     function loginWithGoogle() {
       showLoading()
-      window.location.href = '/auth/login/google'
+      const url = redirectUrl
+        ? `/auth/login/google?redirect=${encodeURIComponent(redirectUrl)}`
+        : '/auth/login/google'
+      window.location.href = url
     }
 
     function loginWithGitHub() {
       showLoading()
-      window.location.href = '/auth/login/github'
+      const url = redirectUrl
+        ? `/auth/login/github?redirect=${encodeURIComponent(redirectUrl)}`
+        : '/auth/login/github'
+      window.location.href = url
     }
 
     // Check for error in URL params (from OAuth callback failure)
-    const urlParams = new URLSearchParams(window.location.search)
     const error = urlParams.get('error')
     if (error) {
       showError('認証に失敗しました。もう一度お試しください。')
@@ -162,8 +171,8 @@
       try {
         const response = await fetch('/auth/me')
         if (response.ok) {
-          // User is already authenticated, redirect to My Page
-          window.location.href = '/my-page'
+          // User is already authenticated, redirect to original URL or My Page
+          window.location.href = redirectUrl || '/my-page.html'
         }
       } catch (error) {
         // User is not authenticated, stay on login page

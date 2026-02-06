@@ -372,6 +372,8 @@ test.describe('Permissions', () => {
 
     // Logout and login as viewer
     await page.click('button:has-text("ログアウト")')
+    await page.waitForURL('**/login.html')
+    await page.waitForTimeout(1000) // Wait for logout to complete
     await testLogin(page, 2)
 
     // Try to create a node via API

@@ -5,9 +5,11 @@ let currentTreeId = null // Current tree ID
 let currentUser = null // Current user info
 let currentUserRole = null // Current user's role in this tree ('owner', 'editor', 'viewer')
 let currentTree = null // Current tree info
+let treeMembers = [] // Tree members for author selection
 let nodes = []
 let relations = []
 let selectedNodeId = null
+let selectedNodeVersion = null // Current node version for optimistic locking
 let selectedNodePath = null // 現在選択されているノードのパス (例: "1-2-5")
 let selectedNodeElement = null // 現在選択されているDOM要素
 let expandedNodes = new Set()
@@ -205,6 +207,79 @@ function updateTreeHeader() {
       ${currentUserRole === 'viewer' ? '<span style="color: #e53e3e; font-size: 0.875rem; font-weight: 500;">閲覧専用</span>' : ''}
     </div>
     <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <!-- Notification Bell -->
+      <div style="position: relative;">
+        <div onclick="toggleNotifications()" style="
+          position: relative;
+          cursor: pointer;
+          font-size: 1.25rem;
+          color: #4a5568;
+          padding: 0.5rem;
+        ">
+          <i class="fas fa-bell"></i>
+          <span id="notification-badge" style="
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-align: center;
+            line-height: 18px;
+          ">0</span>
+        </div>
+
+        <!-- Notification Dropdown -->
+        <div id="notification-dropdown" style="
+          display: none;
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 0.5rem;
+          background: white;
+          border-radius: 0.75rem;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+          width: 400px;
+          max-height: 500px;
+          overflow-y: auto;
+          z-index: 1000;
+        ">
+          <div style="
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          ">
+            <h4 style="font-weight: 600; color: #2d3748; margin: 0;">通知</h4>
+            <button onclick="markAllAsRead()" style="
+              background: none;
+              border: none;
+              color: #3b82f6;
+              cursor: pointer;
+              font-size: 0.75rem;
+            ">
+              すべて既読
+            </button>
+          </div>
+          <div id="notification-list">
+            <div style="
+              padding: 3rem 1.5rem;
+              text-align: center;
+              color: #718096;
+            ">
+              <i class="fas fa-bell-slash" style="font-size: 2rem; opacity: 0.5; margin-bottom: 0.5rem;"></i>
+              <p style="margin: 0;">通知はありません</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       ${currentUser ? `
         <span style="font-size: 0.875rem; color: #718096;">${escapeHtml(currentUser.display_name || currentUser.email)}</span>
       ` : ''}
@@ -319,15 +394,21 @@ async function fetchNodes() {
   }
 
   try {
-    const [nodesRes, relationsRes] = await Promise.all([
+    const [nodesRes, relationsRes, membersRes] = await Promise.all([
       axios.get(`/api/trees/${currentTreeId}/nodes`),
-      axios.get(`/api/trees/${currentTreeId}/relations`)
+      axios.get(`/api/trees/${currentTreeId}/relations`),
+      axios.get(`/api/trees/${currentTreeId}/members`)
     ])
 
     if (nodesRes.data.success && relationsRes.data.success) {
       nodes = nodesRes.data.data
       relations = relationsRes.data.data
       renderTree()
+    }
+
+    // Store tree members for author selection (only editors and owners can be authors)
+    if (membersRes.data.success) {
+      treeMembers = membersRes.data.data.filter(m => m.role === 'owner' || m.role === 'editor')
     }
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
@@ -439,6 +520,14 @@ async function updateNode(id, nodeData) {
     }
   } catch (error) {
     console.error('Failed to update node:', error)
+
+    // Handle version conflict (409)
+    if (error.response && error.response.status === 409) {
+      const conflictData = error.response.data
+      await handleVersionConflict(id, nodeData, conflictData)
+      return null
+    }
+
     showToast('ノードの更新に失敗しました', 'error')
     return null
   }
@@ -469,6 +558,86 @@ async function deleteNode(id) {
     showToast('ノードの削除に失敗しました', 'error')
     return false
   }
+}
+
+// Handle version conflict
+async function handleVersionConflict(nodeId, yourData, conflictData) {
+  const dialog = document.getElementById('conflict-dialog')
+  const serverData = conflictData.server_data
+
+  // Fill in your changes
+  document.getElementById('conflict-your-title').textContent = yourData.title
+  document.getElementById('conflict-your-content').textContent = yourData.content || ''
+
+  // Fill in server version
+  document.getElementById('conflict-server-title').textContent = serverData.title
+  document.getElementById('conflict-server-content').textContent = serverData.content || ''
+  document.getElementById('conflict-server-author').textContent = serverData.author || 'Unknown'
+  document.getElementById('conflict-server-version').textContent = conflictData.current_version
+
+  // Show dialog
+  dialog.classList.remove('hidden')
+  dialog.classList.add('flex')
+
+  // Wait for user choice
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      dialog.classList.remove('flex')
+      dialog.classList.add('hidden')
+      useServerBtn.removeEventListener('click', handleUseServer)
+      useMineBtn.removeEventListener('click', handleUseMine)
+      cancelBtn.removeEventListener('click', handleCancel)
+      closeBtn.removeEventListener('click', handleCancel)
+    }
+
+    const handleUseServer = async () => {
+      cleanup()
+      // Reload the node to get server version
+      await selectNode(nodeId)
+      showToast('サーバーの最新版を読み込みました', 'info')
+      resolve('server')
+    }
+
+    const handleUseMine = async () => {
+      cleanup()
+      // Force update with server version number
+      showLoading()
+      try {
+        const response = await axios.put(`/api/trees/${currentTreeId}/nodes/${nodeId}`, {
+          ...yourData,
+          version: conflictData.current_version
+        })
+        if (response.data.success) {
+          await fetchNodes()
+          await selectNode(nodeId)
+          showToast('あなたの変更を保存しました', 'success')
+          resolve('mine')
+        }
+      } catch (error) {
+        console.error('Failed to force update:', error)
+        showToast('保存に失敗しました', 'error')
+        resolve('error')
+      } finally {
+        hideLoading()
+      }
+    }
+
+    const handleCancel = () => {
+      cleanup()
+      showToast('保存をキャンセルしました', 'info')
+      resolve('cancel')
+    }
+
+    const useServerBtn = document.getElementById('conflict-use-server')
+    const useMineBtn = document.getElementById('conflict-use-mine')
+    const cancelBtn = document.getElementById('conflict-cancel')
+    const closeBtn = document.getElementById('conflict-dialog-close')
+
+    useServerBtn.addEventListener('click', handleUseServer)
+    useMineBtn.addEventListener('click', handleUseMine)
+    cancelBtn.addEventListener('click', handleCancel)
+    closeBtn.addEventListener('click', handleCancel)
+  })
 }
 
 async function moveNode(nodeId, newParentId, newPosition) {
@@ -1318,8 +1487,12 @@ function renderEditor(node = null, parents = []) {
         <p class="text-sm mt-2">Cmd+C でコピー、Cmd+V で貼り付け</p>
       </div>
     `
+    selectedNodeVersion = null
     return
   }
+
+  // Store current node version for optimistic locking
+  selectedNodeVersion = node.version || 1
 
   const parentsHtml = parents.length > 0 ? `
     <div class="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
@@ -1353,7 +1526,8 @@ function renderEditor(node = null, parents = []) {
             <button id="delete-node-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
               <i class="fas fa-trash mr-2"></i>削除
             </button>
-            <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    title="保存 (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)">
               <i class="fas fa-save mr-2"></i>保存
             </button>
           </div>
@@ -1368,9 +1542,9 @@ function renderEditor(node = null, parents = []) {
           <label class="block text-sm font-medium text-gray-700 mb-1">
             <i class="fas fa-heading mr-1"></i>タイトル
           </label>
-          <input type="text" id="node-title" 
+          <input type="text" id="node-title"
                  value="${escapeHtml(node.title)}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                 class="w-full px-4 py-3 text-lg font-medium border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
         
         <!-- 内容 (Markdown対応) -->
@@ -1386,9 +1560,18 @@ function renderEditor(node = null, parents = []) {
           <label class="block text-sm font-medium text-gray-700 mb-1">
             <i class="fas fa-user mr-1"></i>作成者
           </label>
-          <input type="text" id="node-author" 
-                 value="${escapeHtml(node.author)}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <select id="node-author"
+                  class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            ${treeMembers.map(member => `
+              <option value="${escapeHtml(member.display_name || member.email)}"
+                      ${(member.display_name || member.email) === node.author ? 'selected' : ''}>
+                ${escapeHtml(member.display_name || member.email)}
+              </option>
+            `).join('')}
+            ${!treeMembers.find(m => (m.display_name || m.email) === node.author) && node.author ? `
+              <option value="${escapeHtml(node.author)}" selected>${escapeHtml(node.author)}</option>
+            ` : ''}
+          </select>
         </div>
         
         <!-- メタ情報 -->
@@ -1486,10 +1669,10 @@ async function saveCurrentNode() {
 
   showLoading()
   try {
-    const updated = await updateNode(selectedNodeId, { title, content, author })
+    const updated = await updateNode(selectedNodeId, { title, content, author, version: selectedNodeVersion })
     if (updated) {
       showToast('保存しました', 'success')
-      await selectNode(selectedNodeId) // リロード
+      await selectNode(selectedNodeId) // リロード (新しいバージョンを取得)
     }
   } finally {
     hideLoading()
@@ -1513,15 +1696,15 @@ async function addRootNode() {
   const title = prompt('ルートノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
-  const author = prompt('作成者名を入力してください:', 'Admin')
-  if (!author || !author.trim()) return
+  // Use current user as default author
+  const defaultAuthor = currentUser?.display_name || currentUser?.email || 'Unknown'
 
   showLoading()
   try {
     const node = await createNode({
       title: title.trim(),
       content: '',
-      author: author.trim(),
+      author: defaultAuthor,
       root_position: 0
     })
 
@@ -1538,8 +1721,8 @@ async function addChildNode(parentId) {
   const title = prompt('子ノードのタイトルを入力してください:')
   if (!title || !title.trim()) return
 
-  const author = prompt('作成者名を入力してください:', 'Admin')
-  if (!author || !author.trim()) return
+  // Use current user as default author
+  const defaultAuthor = currentUser?.display_name || currentUser?.email || 'Unknown'
 
   showLoading()
   try {
@@ -1547,7 +1730,7 @@ async function addChildNode(parentId) {
     const node = await createNode({
       title: title.trim(),
       content: '',
-      author: author.trim()
+      author: defaultAuthor
     })
 
     if (node) {
@@ -1648,6 +1831,17 @@ function handleCopy(e) {
 
     // 視覚的フィードバック
     showToast('ノードをコピーしました', 'success')
+  }
+}
+
+// Save shortcut handler (Cmd/Ctrl + Enter)
+function handleSaveShortcut(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && selectedNodeId) {
+    e.preventDefault()
+    const saveBtn = document.getElementById('save-node-btn')
+    if (saveBtn && !saveBtn.disabled) {
+      saveBtn.click()
+    }
   }
 }
 
@@ -1906,6 +2100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', handleCopy)
   document.addEventListener('keydown', handlePaste)
   document.addEventListener('keydown', handleArrowKeys)
+  document.addEventListener('keydown', handleSaveShortcut)
 
   // 初期データ読み込み（認証とツリーコンテキストチェック）
   initializeApp()

@@ -18,6 +18,13 @@ import {
   removeTreeMember,
   updateMemberRole
 } from './utils/permissions'
+import {
+  createInvitation,
+  getInvitationByToken,
+  acceptInvitation,
+  getTreeInvitations
+} from './utils/invitations'
+import { sendInvitationEmail } from './services/email'
 
 // ビルド番号のグローバル型定義
 declare const __BUILD_NUMBER__: string
@@ -30,6 +37,8 @@ type Bindings = {
   GITHUB_CLIENT_ID: string
   GITHUB_CLIENT_SECRET: string
   APP_URL: string
+  MAILGUN_API_KEY: string
+  MAILGUN_DOMAIN: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -43,9 +52,13 @@ app.use('/static/*', serveStatic({ root: './public' }))
 // HTMLファイル配信
 import loginHtml from '../public/login.html?raw'
 import myPageHtml from '../public/my-page.html?raw'
+import acceptInvitationHtml from '../public/accept-invitation.html?raw'
+import profileHtml from '../public/profile.html?raw'
 
 app.get('/login.html', (c) => c.html(loginHtml))
 app.get('/my-page.html', (c) => c.html(myPageHtml))
+app.get('/accept-invitation.html', (c) => c.html(acceptInvitationHtml))
+app.get('/profile.html', (c) => c.html(profileHtml))
 
 // ===============================
 // API Routes
@@ -87,6 +100,18 @@ app.get('/auth/login/:provider', (c) => {
     maxAge: 600,
     path: '/'
   })
+
+  // Store redirect URL if provided (for returning after login)
+  const redirectUrl = c.req.query('redirect')
+  if (redirectUrl) {
+    setCookie(c, 'oauth_redirect', redirectUrl, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 600,
+      path: '/'
+    })
+  }
 
   // Build authorization URL
   const authUrl = new URL(config.authUrl)
@@ -184,7 +209,8 @@ app.get('/auth/callback/:provider', async (c) => {
         id: user.id,
         email: user.email,
         display_name: user.display_name || '',
-        avatar_url: user.avatar_url || undefined
+        avatar_url: user.avatar_url || undefined,
+        oauth_provider: user.oauth_provider
       },
       c.env.JWT_SECRET
     )
@@ -201,7 +227,10 @@ app.get('/auth/callback/:provider', async (c) => {
       path: '/'
     })
 
-    // Clear OAuth state cookie
+    // Get redirect URL if stored (for invitation flow etc.)
+    const redirectUrl = getCookie(c, 'oauth_redirect')
+
+    // Clear OAuth cookies
     setCookie(c, 'oauth_state', '', {
       httpOnly: true,
       secure: true,
@@ -209,9 +238,16 @@ app.get('/auth/callback/:provider', async (c) => {
       maxAge: 0,
       path: '/'
     })
+    setCookie(c, 'oauth_redirect', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 0,
+      path: '/'
+    })
 
-    // Redirect to My Page
-    return c.redirect('/my-page')
+    // Redirect to stored URL or My Page
+    return c.redirect(redirectUrl || '/my-page.html')
   } catch (error) {
     console.error('OAuth callback error:', error)
     return c.json({ success: false, error: 'Authentication failed' }, 500)
@@ -236,18 +272,109 @@ app.post('/auth/logout', async (c) => {
 // Get current user info
 app.get('/auth/me', authMiddleware, async (c) => {
   try {
-    const user = getCurrentUser(c)
+    const jwtUser = getCurrentUser(c)
+
+    // Fetch latest user data from database
+    const user = await c.env.DB
+      .prepare('SELECT id, email, display_name, avatar_url, oauth_provider FROM users WHERE id = ?')
+      .bind(jwtUser.user_id)
+      .first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'User not found' }, 404)
+    }
 
     return c.json({
       success: true,
       data: {
-        id: user.user_id,
+        id: user.id,
         email: user.email,
         display_name: user.display_name,
-        avatar_url: user.avatar_url
+        avatar_url: user.avatar_url,
+        oauth_provider: user.oauth_provider
       }
     })
   } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================
+// Profile Management APIs
+// ============================================
+
+// Get user profile
+app.get('/api/profile', authMiddleware, async (c) => {
+  try {
+    const jwtUser = getCurrentUser(c)
+
+    // Fetch latest user data from database
+    const user = await c.env.DB
+      .prepare('SELECT id, email, display_name, avatar_url, oauth_provider FROM users WHERE id = ?')
+      .bind(jwtUser.user_id)
+      .first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'User not found' }, 404)
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name,
+        avatar_url: user.avatar_url,
+        oauth_provider: user.oauth_provider
+      }
+    })
+  } catch (error) {
+    console.error('Failed to get profile:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Update user profile
+app.put('/api/profile', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const body = await c.req.json()
+    const { display_name } = body
+
+    // Validate display_name
+    if (display_name !== undefined) {
+      if (typeof display_name !== 'string') {
+        return c.json({ success: false, error: 'Display name must be a string' }, 400)
+      }
+      if (display_name.trim().length === 0) {
+        return c.json({ success: false, error: 'Display name cannot be empty' }, 400)
+      }
+      if (display_name.length > 100) {
+        return c.json({ success: false, error: 'Display name must be 100 characters or less' }, 400)
+      }
+    }
+
+    // Update display_name
+    const updatedUser = await c.env.DB
+      .prepare(`
+        UPDATE users
+        SET display_name = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        RETURNING id, email, display_name, avatar_url, oauth_provider
+      `)
+      .bind(display_name.trim(), user.user_id)
+      .first()
+
+    if (!updatedUser) {
+      return c.json({ success: false, error: 'Failed to update profile' }, 500)
+    }
+
+    return c.json({
+      success: true,
+      data: updatedUser
+    })
+  } catch (error) {
+    console.error('Failed to update profile:', error)
     return c.json({ success: false, error: String(error) }, 500)
   }
 })
@@ -324,7 +451,8 @@ app.get('/auth/test-login', async (c) => {
         id: user.id,
         email: user.email,
         display_name: user.display_name || '',
-        avatar_url: user.avatar_url || undefined
+        avatar_url: user.avatar_url || undefined,
+        oauth_provider: user.oauth_provider
       },
       c.env.JWT_SECRET
     )
@@ -416,7 +544,7 @@ app.post('/api/trees', authMiddleware, async (c) => {
     return c.json({
       success: true,
       data: tree
-    })
+    }, 201)
   } catch (error) {
     console.error('Failed to create tree:', error)
     return c.json({ success: false, error: String(error) }, 500)
@@ -607,6 +735,403 @@ app.put('/api/trees/:id/members/:userId/role', authMiddleware, async (c) => {
   }
 })
 
+// ===============================
+// Invitation Routes
+// ===============================
+
+// Create an invitation to a tree
+app.post('/api/trees/:id/invitations', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Only owner and editors can invite
+    const canInvite = await canManageMembers(c.env.DB, treeId, user.user_id)
+    if (!canInvite) {
+      return c.json({ success: false, error: 'Permission denied. Only owner and editors can invite members' }, 403)
+    }
+
+    const body = await c.req.json()
+    const { email, role } = body
+
+    if (!email || typeof email !== 'string') {
+      return c.json({ success: false, error: 'Invalid email address' }, 400)
+    }
+
+    if (!role || !['editor', 'viewer'].includes(role)) {
+      return c.json({ success: false, error: 'Invalid role. Must be editor or viewer' }, 400)
+    }
+
+    // Check if user with this email already exists and is a member
+    const existingUser = await c.env.DB
+      .prepare('SELECT id FROM users WHERE email = ?')
+      .bind(email)
+      .first<{ id: number }>()
+
+    if (existingUser) {
+      const existingMember = await c.env.DB
+        .prepare('SELECT id FROM tree_members WHERE tree_id = ? AND user_id = ?')
+        .bind(treeId, existingUser.id)
+        .first()
+
+      if (existingMember) {
+        return c.json({ success: false, error: 'User is already a member of this tree' }, 400)
+      }
+    }
+
+    // Check if there's already a pending invitation for this email
+    const existingInvitation = await c.env.DB
+      .prepare(
+        `SELECT id FROM invitations
+         WHERE tree_id = ? AND invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP`
+      )
+      .bind(treeId, email)
+      .first()
+
+    if (existingInvitation) {
+      return c.json({ success: false, error: 'An active invitation already exists for this email' }, 400)
+    }
+
+    // Create invitation
+    const invitation = await createInvitation(c.env.DB, treeId, user.user_id, email, role as 'editor' | 'viewer')
+
+    // Get tree and inviter information for email
+    const tree = await getTreeById(c.env.DB, treeId)
+    const inviter = await c.env.DB
+      .prepare('SELECT display_name, email FROM users WHERE id = ?')
+      .bind(user.user_id)
+      .first<{ display_name: string; email: string }>()
+
+    if (!tree || !inviter) {
+      // Invitation created but email couldn't be sent
+      return c.json({
+        success: true,
+        data: {
+          id: invitation.id,
+          token: invitation.token,
+          email,
+          role,
+          message: 'Invitation created but email could not be sent'
+        }
+      }, 201)
+    }
+
+    // Get invitation details to retrieve expires_at
+    const invitationDetails = await getInvitationByToken(c.env.DB, invitation.token)
+
+    // Send invitation email (synchronous to ensure logging)
+    if (!c.env.MAILGUN_API_KEY || !c.env.MAILGUN_DOMAIN) {
+      console.warn('⚠️  MAILGUN_API_KEY or MAILGUN_DOMAIN not configured. Invitation email will NOT be sent.')
+      console.log('📧 Would send invitation email to:', email)
+    } else if (!invitationDetails) {
+      console.error('❌ Invitation details not found. Email cannot be sent.')
+    } else {
+      console.log('📧 Sending invitation email to:', email)
+      try {
+        const emailResult = await sendInvitationEmail(
+          { apiKey: c.env.MAILGUN_API_KEY, domain: c.env.MAILGUN_DOMAIN },
+          {
+            to: email,
+            inviterName: inviter.display_name || inviter.email,
+            treeName: tree.name,
+            role: role as 'editor' | 'viewer',
+            token: invitation.token,
+            appUrl: c.env.APP_URL,
+            expiresAt: invitationDetails.expires_at
+          }
+        )
+
+        if (emailResult.success) {
+          console.log('✅ Invitation email sent successfully to:', email)
+          console.log('   Email ID:', emailResult.id)
+        } else {
+          console.error('❌ Failed to send invitation email:', emailResult.error)
+        }
+      } catch (error) {
+        console.error('❌ Exception while sending invitation email:', error)
+        // Don't fail the API call if email fails
+      }
+    }
+
+    // Create notification if invitee is an existing user
+    if (existingUser) {
+      await createNotification(
+        c.env.DB,
+        existingUser.id,
+        'invitation',
+        'ツリーへの招待',
+        `${inviter.display_name || inviter.email} さんがあなたを「${tree.name}」ツリーに招待しました`,
+        `/accept-invitation.html?token=${invitation.token}`
+      )
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        id: invitation.id,
+        token: invitation.token,
+        email,
+        role,
+        message: 'Invitation created successfully'
+      }
+    }, 201)
+  } catch (error) {
+    console.error('Failed to create invitation:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Get invitation details by token (public, no auth required)
+app.get('/api/invitations/:token', async (c) => {
+  try {
+    const token = c.req.param('token')
+
+    if (!token) {
+      return c.json({ success: false, error: 'Invalid token' }, 400)
+    }
+
+    const invitation = await getInvitationByToken(c.env.DB, token)
+
+    if (!invitation) {
+      return c.json({ success: false, error: 'Invitation not found' }, 404)
+    }
+
+    // Check if invitation has expired
+    const now = new Date()
+    const expiresAt = new Date(invitation.expires_at)
+    const isExpired = now > expiresAt
+
+    // Check if invitation is still pending
+    if (invitation.status !== 'pending') {
+      return c.json({ success: false, error: 'Invitation has already been used or cancelled' }, 400)
+    }
+
+    if (isExpired) {
+      return c.json({ success: false, error: 'Invitation has expired' }, 400)
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        tree_name: invitation.tree_name,
+        inviter_name: invitation.inviter_name,
+        role: invitation.role,
+        expires_at: invitation.expires_at,
+        invitee_email: invitation.invitee_email
+      }
+    })
+  } catch (error) {
+    console.error('Failed to get invitation:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Accept an invitation
+app.post('/api/invitations/:token/accept', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const token = c.req.param('token')
+
+    if (!token) {
+      return c.json({ success: false, error: 'Invalid token' }, 400)
+    }
+
+    // Verify invitation matches user's email
+    const invitation = await getInvitationByToken(c.env.DB, token)
+    if (!invitation) {
+      return c.json({ success: false, error: 'Invitation not found' }, 404)
+    }
+
+    // Check if the logged-in user's email matches the invitation email
+    const currentUser = await c.env.DB
+      .prepare('SELECT email FROM users WHERE id = ?')
+      .bind(user.user_id)
+      .first<{ email: string }>()
+
+    if (!currentUser || currentUser.email !== invitation.invitee_email) {
+      return c.json({
+        success: false,
+        error: 'This invitation is for a different email address. Please log in with the invited email.'
+      }, 403)
+    }
+
+    // Accept invitation
+    const result = await acceptInvitation(c.env.DB, token, user.user_id)
+
+    // Get tree and user information for notification
+    const tree = await getTreeById(c.env.DB, result.treeId)
+    const acceptingUser = await c.env.DB
+      .prepare('SELECT display_name, email FROM users WHERE id = ?')
+      .bind(user.user_id)
+      .first<{ display_name: string; email: string }>()
+
+    // Create notification for the inviter
+    if (tree && acceptingUser && invitation.inviter_user_id) {
+      await createNotification(
+        c.env.DB,
+        invitation.inviter_user_id,
+        'invitation_accepted',
+        '招待が受諾されました',
+        `${acceptingUser.display_name || acceptingUser.email} さんが「${tree.name}」ツリーへの招待を受諾しました`,
+        `/index.html?tree=${result.treeId}`
+      )
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        tree_id: result.treeId,
+        role: result.role,
+        message: 'Invitation accepted successfully'
+      }
+    })
+  } catch (error) {
+    console.error('Failed to accept invitation:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return c.json({ success: false, error: errorMessage }, 400)
+  }
+})
+
+// Get all invitations for a tree (owner/editor only)
+app.get('/api/trees/:id/invitations', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+
+    if (isNaN(treeId)) {
+      return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Only owner and editors can view invitations
+    const canView = await canManageMembers(c.env.DB, treeId, user.user_id)
+    if (!canView) {
+      return c.json({ success: false, error: 'Permission denied' }, 403)
+    }
+
+    const invitations = await getTreeInvitations(c.env.DB, treeId)
+
+    return c.json({
+      success: true,
+      data: invitations
+    })
+  } catch (error) {
+    console.error('Failed to get invitations:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================
+// Notification Management APIs
+// ============================================
+
+// Get all notifications for the current user
+app.get('/api/notifications', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+
+    const notifications = await c.env.DB
+      .prepare(`
+        SELECT id, type, title, message, link, is_read, created_at
+        FROM notifications
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 50
+      `)
+      .bind(user.user_id)
+      .all()
+
+    return c.json({
+      success: true,
+      data: notifications.results || []
+    })
+  } catch (error) {
+    console.error('Failed to get notifications:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Mark a specific notification as read
+app.put('/api/notifications/:id/read', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const notificationId = parseInt(c.req.param('id'))
+
+    if (isNaN(notificationId)) {
+      return c.json({ success: false, error: 'Invalid notification ID' }, 400)
+    }
+
+    // Check if notification belongs to the user
+    const notification = await c.env.DB
+      .prepare('SELECT user_id FROM notifications WHERE id = ?')
+      .bind(notificationId)
+      .first<{ user_id: number }>()
+
+    if (!notification) {
+      return c.json({ success: false, error: 'Notification not found' }, 404)
+    }
+
+    if (notification.user_id !== user.user_id) {
+      return c.json({ success: false, error: 'Access denied' }, 403)
+    }
+
+    // Mark as read
+    await c.env.DB
+      .prepare('UPDATE notifications SET is_read = 1 WHERE id = ?')
+      .bind(notificationId)
+      .run()
+
+    return c.json({
+      success: true,
+      message: 'Notification marked as read'
+    })
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Mark all notifications as read for the current user
+app.put('/api/notifications/read-all', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+
+    await c.env.DB
+      .prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0')
+      .bind(user.user_id)
+      .run()
+
+    return c.json({
+      success: true,
+      message: 'All notifications marked as read'
+    })
+  } catch (error) {
+    console.error('Failed to mark all notifications as read:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Helper function to create a notification
+async function createNotification(
+  db: D1Database,
+  userId: number,
+  type: string,
+  title: string,
+  message: string,
+  link?: string
+) {
+  await db
+    .prepare(`
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES (?, ?, ?, ?, ?)
+    `)
+    .bind(userId, type, title, message, link || null)
+    .run()
+}
+
 // Get a specific tree
 app.get('/api/trees/:id', authMiddleware, async (c) => {
   try {
@@ -617,15 +1142,16 @@ app.get('/api/trees/:id', authMiddleware, async (c) => {
       return c.json({ success: false, error: 'Invalid tree ID' }, 400)
     }
 
+    // Check if tree exists first (404 before 403)
+    const tree = await getTreeById(c.env.DB, treeId)
+    if (!tree) {
+      return c.json({ success: false, error: 'Tree not found' }, 404)
+    }
+
     // Check if user has access to this tree
     const hasAccess = await canViewTree(c.env.DB, treeId, user.user_id)
     if (!hasAccess) {
       return c.json({ success: false, error: 'Access denied' }, 403)
-    }
-
-    const tree = await getTreeById(c.env.DB, treeId)
-    if (!tree) {
-      return c.json({ success: false, error: 'Tree not found' }, 404)
     }
 
     // Get tree statistics
@@ -728,6 +1254,12 @@ app.get('/api/trees/:tree_id/nodes', authMiddleware, async (c) => {
 
     if (isNaN(treeId)) {
       return c.json({ success: false, error: 'Invalid tree ID' }, 400)
+    }
+
+    // Check if tree exists first (404 before 403)
+    const tree = await getTreeById(c.env.DB, treeId)
+    if (!tree) {
+      return c.json({ success: false, error: 'Tree not found' }, 404)
     }
 
     // Check if user has access to this tree
@@ -977,7 +1509,7 @@ app.put('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
     }
 
     const body = await c.req.json()
-    const { title, content, author } = body
+    const { title, content, author, version: clientVersion } = body
 
     // Get current node
     const existing = await c.env.DB.prepare('SELECT * FROM nodes WHERE id = ? AND tree_id = ?')
@@ -988,10 +1520,29 @@ app.put('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
       return c.json({ success: false, error: 'Node not found' }, 404)
     }
 
-    // Update node
+    // Optimistic locking: Check version if provided
+    if (clientVersion !== undefined) {
+      const currentVersion = existing.version || 1
+      if (clientVersion !== currentVersion) {
+        // Version conflict detected
+        return c.json(
+          {
+            success: false,
+            error: 'Version conflict',
+            message: 'This node has been modified by another user. Please refresh and try again.',
+            current_version: currentVersion,
+            server_data: existing
+          },
+          409
+        )
+      }
+    }
+
+    // Update node with version increment
+    const newVersion = (existing.version || 1) + 1
     await c.env.DB.prepare(
       `UPDATE nodes
-       SET title = ?, content = ?, author = ?, updated_by_user_id = ?, updated_at = CURRENT_TIMESTAMP
+       SET title = ?, content = ?, author = ?, updated_by_user_id = ?, version = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ? AND tree_id = ?`
     )
       .bind(
@@ -999,6 +1550,7 @@ app.put('/api/trees/:tree_id/nodes/:id', authMiddleware, async (c) => {
         content !== undefined ? content : existing.content,
         author !== undefined ? author : existing.author,
         user.user_id,
+        newVersion,
         nodeId,
         treeId
       )
@@ -1972,9 +2524,84 @@ const getEditorHTML = () => `
             </div>
         </div>
 
+        <!-- Version Conflict Resolution Dialog -->
+        <div id="conflict-dialog" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                            競合が検出されました
+                        </h2>
+                        <button id="conflict-dialog-close" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <p class="text-gray-600 mt-2">
+                        このノードは他のユーザーによって更新されました。以下のいずれかを選択してください。
+                    </p>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Your Version -->
+                    <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-3">
+                            <i class="fas fa-user mr-2"></i>あなたの変更
+                        </h3>
+                        <div class="space-y-3 bg-white p-4 rounded">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">タイトル:</label>
+                                <div id="conflict-your-title" class="text-gray-900 mt-1"></div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">内容:</label>
+                                <div id="conflict-your-content" class="text-gray-900 mt-1 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Server Version -->
+                    <div class="border border-green-200 rounded-lg p-4 bg-green-50">
+                        <h3 class="text-lg font-semibold text-green-900 mb-3">
+                            <i class="fas fa-server mr-2"></i>サーバー上の最新バージョン
+                        </h3>
+                        <div class="space-y-3 bg-white p-4 rounded">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">タイトル:</label>
+                                <div id="conflict-server-title" class="text-gray-900 mt-1"></div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">内容:</label>
+                                <div id="conflict-server-content" class="text-gray-900 mt-1 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <span>更新者: <span id="conflict-server-author"></span></span>
+                                <span class="ml-4">バージョン: <span id="conflict-server-version"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-gray-200 bg-gray-50 flex gap-3">
+                    <button id="conflict-use-server" class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                        <i class="fas fa-check mr-2"></i>サーバー版を使用
+                        <p class="text-sm mt-1 opacity-90">あなたの変更を破棄し、サーバーの最新版を使用します</p>
+                    </button>
+                    <button id="conflict-use-mine" class="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium">
+                        <i class="fas fa-save mr-2"></i>自分の版を維持
+                        <p class="text-sm mt-1 opacity-90">サーバー版を上書きして、あなたの変更を保存します</p>
+                    </button>
+                    <button id="conflict-cancel" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium">
+                        <i class="fas fa-times mr-2"></i>キャンセル
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
+        <script src="/static/notifications.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>

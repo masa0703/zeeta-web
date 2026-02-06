@@ -293,8 +293,36 @@
   </label>
   <input type="text"
          id="node-title"
-         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium"
          placeholder="ノードのタイトルを入力">
+</div>
+```
+
+**スタイル**:
+- 幅: `w-full`（100%）
+- パディング: `px-3 py-2`
+- ボーダー: `border border-gray-300`
+- 角丸: `rounded-lg`
+- **フォントサイズ**: `text-lg`（大きめのフォント）
+- **フォントウェイト**: `font-medium`（中太字）
+- フォーカス時:
+  - アウトライン: なし (`focus:outline-none`)
+  - リング: `focus:ring-2 focus:ring-blue-500`（青いリング）
+
+### 作成者入力欄
+
+```html
+<div class="mb-4">
+  <label class="block text-sm font-bold text-gray-700 mb-2">
+    作成者
+  </label>
+  <select id="node-author"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <option value="">作成者を選択</option>
+    <!-- ツリーメンバー（オーナー・編集者）のリスト -->
+    <option value="user-id-1">ユーザー1</option>
+    <option value="user-id-2">ユーザー2</option>
+  </select>
 </div>
 ```
 
@@ -307,22 +335,10 @@
   - アウトライン: なし (`focus:outline-none`)
   - リング: `focus:ring-2 focus:ring-blue-500`（青いリング）
 
-### 作成者表示
-
-```html
-<div class="mb-4">
-  <label class="block text-sm font-bold text-gray-700 mb-2">
-    作成者
-  </label>
-  <div id="node-author" class="text-gray-600">
-    作成者名
-  </div>
-</div>
-```
-
-**スタイル**:
-- テキスト色: `text-gray-600`
-- 読み取り専用（編集不可）
+**動作**:
+- ツリーメンバー（編集権限のあるユーザー：オーナー・編集者）をドロップダウンに表示
+- ノード新規作成時、ログインユーザーがデフォルトで選択される
+- 閲覧者はリストに表示されない
 
 ### 内容入力エリア
 
@@ -352,7 +368,8 @@
 #### 保存ボタン
 ```html
 <button id="save-node-btn"
-        class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:shadow-md">
+        class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:shadow-md"
+        title="保存 (Cmd+Enter / Ctrl+Enter)">
   <i class="fas fa-save"></i> 保存
 </button>
 ```
@@ -363,6 +380,11 @@
 - パディング: `px-6 py-2`
 - 角丸: `rounded-lg`
 - シャドウ: `shadow hover:shadow-md`
+- **ツールチップ**: ホバー時に「保存 (Cmd+Enter / Ctrl+Enter)」を表示
+
+**キーボードショートカット**:
+- Mac: `Cmd + Enter`
+- Windows/Linux: `Ctrl + Enter`
 
 #### 削除ボタン
 ```html
@@ -751,9 +773,13 @@ let treeViewMode = 'normal' // ツリー表示モード ('normal' | 'reverse')
 ## アクセシビリティ
 
 ### 現在の実装
-- キーボードショートカット対応（Ctrl+C, Ctrl+V）
+- キーボードショートカット対応
+  - コピー: `Ctrl+C` / `Cmd+C`
+  - ペースト: `Ctrl+V` / `Cmd+V`
+  - **保存: `Ctrl+Enter` / `Cmd+Enter`**
 - ホバー時の視覚フィードバック
 - 明確なボタンラベル
+- ツールチップでショートカット情報を表示
 
 ### 今後の改善予定
 - フォーカスインジケーター強化

@@ -232,22 +232,86 @@ async function openMemberModal(treeId) {
   currentTreeForMembers = treeId
 
   try {
-    const response = await fetch(`/api/trees/${treeId}/members`)
-
-    if (!response.ok) {
+    // Load members
+    const membersResponse = await fetch(`/api/trees/${treeId}/members`)
+    if (!membersResponse.ok) {
       throw new Error('Failed to load members')
     }
+    const membersData = await membersResponse.json()
 
-    const data = await response.json()
-
-    if (data.success && data.data) {
-      displayMembers(data.data, treeId)
-      document.getElementById('member-modal').classList.add('active')
+    if (membersData.success && membersData.data) {
+      displayMembers(membersData.data, treeId)
     }
+
+    // Load pending invitations
+    const tree = allTrees.find(t => t.id === treeId)
+    const canViewInvitations = tree && (tree.role === 'owner' || tree.role === 'editor')
+
+    if (canViewInvitations) {
+      const invitationsResponse = await fetch(`/api/trees/${treeId}/invitations`)
+      if (invitationsResponse.ok) {
+        const invitationsData = await invitationsResponse.json()
+        if (invitationsData.success && invitationsData.data) {
+          displayPendingInvitations(invitationsData.data)
+        }
+      }
+    }
+
+    // Show invite section if user is owner or editor
+    document.getElementById('invite-section').style.display = canViewInvitations ? 'block' : 'none'
+
+    // Reset invite form
+    document.getElementById('invite-form').reset()
+
+    document.getElementById('member-modal').classList.add('active')
   } catch (error) {
     console.error('Failed to load members:', error)
     showError('メンバー情報の読み込みに失敗しました')
   }
+}
+
+/**
+ * Display pending invitations list
+ */
+function displayPendingInvitations(invitations) {
+  const pendingInvitationsSection = document.getElementById('pending-invitations-section')
+  const pendingInvitationsList = document.getElementById('pending-invitations-list')
+
+  // Filter for pending invitations only
+  const pendingOnly = invitations.filter(inv => inv.status === 'pending')
+
+  if (pendingOnly.length === 0) {
+    pendingInvitationsSection.style.display = 'none'
+    return
+  }
+
+  pendingInvitationsSection.style.display = 'block'
+
+  pendingInvitationsList.innerHTML = pendingOnly.map(invitation => {
+    const roleClass = `role-${invitation.role}`
+    const roleName = {
+      editor: '編集者',
+      viewer: '閲覧者'
+    }[invitation.role] || invitation.role
+
+    const expiresAt = new Date(invitation.expires_at)
+    const now = new Date()
+    const isExpired = expiresAt < now
+    const expiresText = isExpired ? '期限切れ' : `期限: ${expiresAt.toLocaleDateString('ja-JP')}`
+
+    return `
+      <div class="flex items-center justify-between p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+        <div class="flex-1">
+          <div class="text-sm font-semibold text-gray-800">${escapeHtml(invitation.invitee_email)}</div>
+          <div class="text-xs text-gray-500">${expiresText}</div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="role-badge ${roleClass}" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">${roleName}</span>
+          <span class="text-xs text-gray-500 px-2 py-1 bg-yellow-100 rounded">招待中</span>
+        </div>
+      </div>
+    `
+  }).join('')
 }
 
 /**
@@ -335,6 +399,63 @@ async function removeMember(treeId, userId) {
   } catch (error) {
     console.error('Failed to remove member:', error)
     showError('メンバーの削除に失敗しました: ' + error.message)
+  }
+}
+
+/**
+ * Send invitation
+ */
+async function sendInvitation(event) {
+  event.preventDefault()
+
+  const form = event.target
+  const email = form.email.value.trim()
+  const role = form.role.value
+
+  if (!email) {
+    showError('メールアドレスを入力してください')
+    return
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    showError('有効なメールアドレスを入力してください')
+    return
+  }
+
+  try {
+    const submitBtn = form.querySelector('button[type="submit"]')
+    const originalText = submitBtn.textContent
+    submitBtn.disabled = true
+    submitBtn.textContent = '送信中...'
+
+    const response = await fetch(`/api/trees/${currentTreeForMembers}/invitations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, role })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to send invitation')
+    }
+
+    showSuccess('招待メールを送信しました')
+    form.reset()
+
+    // Reload members to show any updates
+    await openMemberModal(currentTreeForMembers)
+  } catch (error) {
+    console.error('Failed to send invitation:', error)
+    showError('招待の送信に失敗しました: ' + error.message)
+  } finally {
+    const submitBtn = form.querySelector('button[type="submit"]')
+    submitBtn.disabled = false
+    submitBtn.textContent = '招待'
   }
 }
 
