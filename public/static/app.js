@@ -357,95 +357,6 @@ function updateTreeHeader() {
       </span>
       ${currentUserRole === 'viewer' ? '<span style="color: #e53e3e; font-size: 0.875rem; font-weight: 500;">閲覧専用</span>' : ''}
     </div>
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <!-- Notification Bell -->
-      <div style="position: relative;">
-        <div onclick="toggleNotifications()" style="
-          position: relative;
-          cursor: pointer;
-          font-size: 1.25rem;
-          color: #4a5568;
-          padding: 0.5rem;
-        ">
-          <i class="fas fa-bell"></i>
-          <span id="notification-badge" style="
-            display: none;
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-align: center;
-            line-height: 18px;
-          ">0</span>
-        </div>
-
-        <!-- Notification Dropdown -->
-        <div id="notification-dropdown" style="
-          display: none;
-          position: absolute;
-          top: 100%;
-          right: 0;
-          margin-top: 0.5rem;
-          background: white;
-          border-radius: 0.75rem;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-          width: 400px;
-          max-height: 500px;
-          overflow-y: auto;
-          z-index: 1000;
-        ">
-          <div style="
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          ">
-            <h4 style="font-weight: 600; color: #2d3748; margin: 0;">通知</h4>
-            <button onclick="markAllAsRead()" style="
-              background: none;
-              border: none;
-              color: #3b82f6;
-              cursor: pointer;
-              font-size: 0.75rem;
-            ">
-              すべて既読
-            </button>
-          </div>
-          <div id="notification-list">
-            <div style="
-              padding: 3rem 1.5rem;
-              text-align: center;
-              color: #718096;
-            ">
-              <i class="fas fa-bell-slash" style="font-size: 2rem; opacity: 0.5; margin-bottom: 0.5rem;"></i>
-              <p style="margin: 0;">通知はありません</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      ${currentUser ? `
-        <span style="font-size: 0.875rem; color: #718096;">${escapeHtml(currentUser.display_name || currentUser.email)}</span>
-      ` : ''}
-      <button onclick="logout()" style="
-        background: transparent;
-        border: 1px solid #cbd5e0;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        color: #4a5568;
-      ">
-        ログアウト
-      </button>
-    </div>
   `
 
   // Disable editing controls if viewer
@@ -1132,8 +1043,8 @@ function renderTreeNode(node, level, visitedNodes = new Set(), currentPath) {
 
   let html = `
     <div class="tree-node-wrapper" data-node-group="${node.id}">
-      <div class="tree-item flex items-center py-0 px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}" 
-           style="padding-left: ${indent + 8}px"
+      <div class="tree-item flex items-center px-2 rounded ${isSelected ? 'active' : ''} ${isDuplicate ? 'duplicate-active' : ''} ${isSearchResult ? 'ring-2 ring-yellow-300' : ''}"
+           style="padding-left: ${indent + 8}px; padding-top: 2px; padding-bottom: 2px;"
            data-node-id="${node.id}"
            data-node-path="${currentPath}">
         ${showDragHandle ?

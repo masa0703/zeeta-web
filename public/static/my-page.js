@@ -10,7 +10,26 @@ let currentTreeForMembers = null
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth()
   await loadTrees()
+  fetchVersion()
 })
+
+/**
+ * Fetch and display version
+ */
+async function fetchVersion() {
+  try {
+    const response = await fetch('/api/version')
+    const data = await response.json()
+    if (data.success && data.data) {
+      const versionBadge = document.getElementById('version-badge')
+      if (versionBadge) {
+        versionBadge.textContent = data.data.version
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch version:', error)
+  }
+}
 
 /**
  * Check if user is authenticated
@@ -135,7 +154,18 @@ function createTreeCard(tree) {
   return `
     <div class="tree-card p-6" onclick="openTree(${tree.id})">
       <div class="flex items-start justify-between mb-3">
-        <h3 class="text-lg font-bold text-gray-800 flex-1">${escapeHtml(tree.name)}</h3>
+        <div class="flex items-center gap-2 flex-1">
+          <h3 class="text-lg font-bold text-gray-800">${escapeHtml(tree.name)}</h3>
+          ${tree.role === 'owner' ? `
+            <button
+              onclick="event.stopPropagation(); editTreeName(${tree.id}, '${escapeHtml(tree.name).replace(/'/g, "\\'")}')"
+              class="text-gray-400 hover:text-gray-600"
+              title="ツリー名を編集"
+            >
+              <i class="fas fa-pencil-alt text-sm"></i>
+            </button>
+          ` : ''}
+        </div>
         <span class="role-badge ${roleClass}">${roleName}</span>
       </div>
 
@@ -170,6 +200,38 @@ function openTree(treeId) {
   // TODO: Update URL structure when editor is migrated to tree-scoped URLs
   // For now, redirect to existing editor
   window.location.href = `/index.html?tree=${treeId}`
+}
+
+/**
+ * Edit tree name
+ */
+async function editTreeName(treeId, currentName) {
+  const newName = prompt('新しいツリー名を入力してください:', currentName)
+  if (!newName || newName.trim() === '' || newName.trim() === currentName) {
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/trees/${treeId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newName.trim() })
+    })
+
+    const data = await response.json()
+
+    if (data.success) {
+      // Reload trees to show updated name
+      await loadTrees()
+    } else {
+      alert('ツリー名の更新に失敗しました: ' + (data.error || 'Unknown error'))
+    }
+  } catch (error) {
+    console.error('Failed to update tree name:', error)
+    alert('ツリー名の更新に失敗しました')
+  }
 }
 
 /**
