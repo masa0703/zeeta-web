@@ -250,7 +250,9 @@ app.get('/auth/callback/:provider', async (c) => {
     return c.redirect(redirectUrl || '/my-page.html')
   } catch (error) {
     console.error('OAuth callback error:', error)
-    return c.json({ success: false, error: 'Authentication failed' }, 500)
+    // Include error details for debugging (remove in production later)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return c.json({ success: false, error: 'Authentication failed', details: errorMessage }, 500)
   }
 })
 

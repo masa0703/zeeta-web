@@ -151,7 +151,13 @@ function base64UrlEncode(input: string | ArrayBuffer): string {
   let base64: string
 
   if (typeof input === 'string') {
-    base64 = btoa(input)
+    // Convert string to UTF-8 bytes first to handle non-ASCII characters
+    const encoder = new TextEncoder()
+    const bytes = encoder.encode(input)
+    const binaryString = Array.from(bytes)
+      .map(byte => String.fromCharCode(byte))
+      .join('')
+    base64 = btoa(binaryString)
   } else {
     const bytes = new Uint8Array(input)
     const binaryString = Array.from(bytes)
@@ -180,7 +186,18 @@ function base64UrlDecode(input: string): string {
     base64 += '='
   }
 
-  return atob(base64)
+  // Decode base64 to binary string
+  const binaryString = atob(base64)
+
+  // Convert binary string to UTF-8 bytes
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+
+  // Decode UTF-8 bytes to string
+  const decoder = new TextDecoder()
+  return decoder.decode(bytes)
 }
 
 /**
