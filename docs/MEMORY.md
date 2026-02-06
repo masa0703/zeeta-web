@@ -31,8 +31,11 @@ docs/
 2. **タスク完了時**:
    - `docs/TODO.md` から削除
    - `docs/CHANGELOG.md` の先頭（日付セクション）に追記
-   - テスト詳細を `docs/test-reports/YYYY-MM-DD.md` に保存
-3. **テスト実行後**: 結果を CHANGELOG と test-reports に記録
+   - テスト詳細を `docs/test-reports/YYYY-MM-DD_99.md` に保存
+	   - このファイル名は、docs/CHANGELOG.md上にも「テスト詳細」として記録する
+1. **テスト実行後**: 
+	1. テストケース毎の結果は、docs/test-reports/YYYY-MM-DD_99.mdに記録
+	2. テスト結果のサマリは CHANGELOG に記録
 
 ### CHANGELOG.md フォーマット
 ```markdown
