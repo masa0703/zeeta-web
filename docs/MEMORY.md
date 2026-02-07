@@ -28,7 +28,12 @@ docs/
 ### 運用フロー
 
 1. **タスク追加時**: `docs/TODO.md` に記載
-2. **タスク完了時**:
+2. **タスク実行時**:
+	1. ユーザがdocs/TODO.mdの実施を依頼
+	2. docs/TODO.mdの内容を確認
+	3. 確認事項があればユーザに確認する
+	4. docs/TODO.mdを実施する
+3. **タスク完了時**:
    - `docs/TODO.md` から削除
    - `docs/CHANGELOG.md` の先頭（日付セクション）に追記
    - テスト詳細を `docs/test-reports/YYYY-MM-DD_99.md` に保存
@@ -39,7 +44,7 @@ docs/
 
 ### CHANGELOG.md フォーマット
 ```markdown
-## YYYY-MM-DD
+## YYYY-MM-DD(n)
 
 ### 実装内容
 - 機能A

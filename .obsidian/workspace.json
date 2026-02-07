@@ -13,26 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/MEMORY.md",
+                "file": "docs/architecture/screen-definition.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "MEMORY"
-            }
-          },
-          {
-            "id": "54052fcc3b4791e1",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "docs/testing/reports/2026-02-06.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "2026-02-06"
+              "title": "screen-definition"
             }
           },
           {
@@ -41,15 +27,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/CHANGELOG.md",
+                "file": "docs/architecture/memo/10時20分.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CHANGELOG"
+              "title": "10時20分"
+            }
+          },
+          {
+            "id": "26cf27e7fa4cead0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/TODO.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TODO"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -211,27 +212,35 @@
       "bases:Create new base": false
     }
   },
-  "active": "ec0cc3bcf38d912e",
+  "active": "4670c47e403f5ef1",
   "lastOpenFiles": [
-    "docs/testing/reports/2026-02-06.md",
-    "docs/CHANGELOG.md",
+    "tests/test-results",
+    "tests/test-results/format-date-formatDate-タイムゾーン変換-実際のノード保存後の更新日がローカル時刻で表示される-chromium/error-context.md",
+    "tests/test-results/format-date-formatDate-タイムゾーン変換-実際のノード保存後の更新日がローカル時刻で表示される-chromium",
+    "tests/test-results/format-date-formatDate-タイム-1b62b-形式（Tあり、Zなし）のUTC時刻をローカル時刻に変換-chromium/error-context.md",
+    "tests/test-results/format-date-formatDate-タイム-1b62b-形式（Tあり、Zなし）のUTC時刻をローカル時刻に変換-chromium",
+    "tests/test-results/format-date-formatDate-タイムゾーン変換-SQLite形式のUTC時刻をローカル時刻に変換-chromium/error-context.md",
+    "tests/test-results/format-date-formatDate-タイムゾーン変換-SQLite形式のUTC時刻をローカル時刻に変換-chromium",
+    "tests/format-date.spec.js",
+    "docs/architecture/memo/ドメイン名の変更.md",
+    "docs/architecture/memo/10時20分.md",
     "docs/MEMORY.md",
+    "docs/architecture/memo",
     "docs/TODO.md",
+    "docs/CHANGELOG.md",
+    "docs/architecture/screen-definition.md",
     "docs/architecture/database-schema.md",
-    "docs/guides/development-rules.md",
+    "docs/testing/reports/2026-02-06.md",
+    "docs/architecture/design.md",
     "docs/guides/development-guide.md",
+    "docs/architecture/api-specification.md",
+    "public/static/app.js.tmp.25582.1770392072642",
+    "migrations/0007_add_trees_deleted_flag.sql",
+    "docs/guides/development-rules.md",
     "無題のファイル.md",
     "zeeta.db",
     "tests/todo-2026-02-06.spec.js",
     "tests/playwright-report/data/91a919f130c634c1ecc4907c1da0afe9f74ea0a2.md",
-    "tests/playwright-report/data",
-    "tests/multi-user-phase8.spec.js",
-    "tests/multi-user-phase6.spec.js",
-    "tests/multi-user-phase4.spec.js",
-    "tests/multi-user-phase13-integration.spec.js",
-    "tests/multi-user-phase11.spec.js",
-    "tests/multi-user-phase10.spec.js",
-    "src/utils/trees.ts",
     "docs/testing/test-plan-phase8.md",
     "docs/testing/test-plan-phase6.md",
     "docs/testing/test-plan-phase4.md",
@@ -240,15 +249,6 @@
     "docs/testing/test-plan-phase10.md",
     "docs/testing/test-cases.md",
     "docs/guides/phase1-setup-guide.md",
-    "docs/guides/email-troubleshooting.md",
-    "docs/architecture/multi-user/implementation-plan.md",
-    "docs/architecture/multi-user/implementation-summary.md",
-    "docs/architecture/screen-definition.md",
-    "docs/architecture/design.md",
-    "docs/architecture/api-specification.md",
-    "docs/README.md",
-    "tests/test-results/outline-editor-Outline-Edi-e03bd-e-display-multiple-parents--chromium/error-context.md",
-    "tests/test-results/outline-editor-Outline-Edi-81230-deletion-becomes-root-node--chromium/error-context.md",
     "dist/static/favicon.png"
   ]
 }

@@ -28,7 +28,8 @@
       "Bash(wrangler secret list:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git push:*)"
     ]
   }
 }
