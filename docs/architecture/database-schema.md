@@ -84,6 +84,7 @@ CREATE TABLE trees (
   name TEXT NOT NULL,
   description TEXT,
   owner_user_id INTEGER NOT NULL,
+  is_deleted INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -98,6 +99,7 @@ CREATE TABLE trees (
 | name | TEXT | NOT NULL | ツリー名 |
 | description | TEXT | - | ツリーの説明 |
 | owner_user_id | INTEGER | NOT NULL, FOREIGN KEY | オーナーのユーザーID |
+| is_deleted | INTEGER | DEFAULT 0 | 削除フラグ (0=有効, 1=削除済み) |
 | created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 最終更新日時 |
 
@@ -105,10 +107,15 @@ CREATE TABLE trees (
 ```sql
 CREATE INDEX idx_trees_owner ON trees(owner_user_id);
 CREATE INDEX idx_trees_updated ON trees(updated_at);
+CREATE INDEX idx_trees_is_deleted ON trees(is_deleted);
 ```
 
 **制約**:
 - `FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE`: オーナーが削除されるとツリーも削除
+
+**注記**:
+- `is_deleted`はソフトデリート用のフラグ（物理削除ではなく論理削除）
+- ツリー一覧取得時は`is_deleted = 0`でフィルタリング
 
 ---
 
@@ -450,7 +457,8 @@ events → notifications → users
 | 0003_remove_parent_id.sql | parent_idとpositionカラム削除 |
 | 0004_add_position_to_relations.sql | node_relationsにpositionカラム追加 |
 | 0005_add_root_position.sql | nodesにroot_positionカラム追加 |
-| **0006_add_multi_user_tables.sql** | **マルチユーザー対応（users, trees, tree_members, invitations, notifications, sessions追加、nodesにtree_id/version追加）** |
+| 0006_add_multi_user_tables.sql | マルチユーザー対応（users, trees, tree_members, invitations, notifications, sessions追加、nodesにtree_id/version追加） |
+| **0007_add_trees_deleted_flag.sql** | **treesテーブルにis_deletedカラム追加（ソフトデリート対応）** |
 
 **マイグレーション実行方法**:
 
@@ -489,6 +497,7 @@ FROM trees t
 JOIN tree_members tm ON t.id = tm.tree_id
 LEFT JOIN users u ON t.owner_user_id = u.id
 WHERE tm.user_id = ?
+  AND t.is_deleted = 0
 ORDER BY t.updated_at DESC;
 ```
 
