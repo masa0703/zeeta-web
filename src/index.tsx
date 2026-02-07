@@ -2323,6 +2323,26 @@ const getEditorHTML = () => `
             border: 2px dashed #3b82f6;
             border-radius: 4px;
           }
+          /* ツリーコンテナの下部にドロップ用スペースを確保 */
+          #tree-container {
+            min-height: 100px;
+            padding-bottom: 60px;
+          }
+          body.is-dragging #tree-container {
+            padding-bottom: 80px;
+            background: linear-gradient(to bottom, transparent 0%, transparent calc(100% - 60px), #f0f9ff calc(100% - 60px), #f0f9ff 100%);
+          }
+          body.is-dragging #tree-container::after {
+            content: 'ルートの最後にドロップ';
+            display: block;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 16px;
+            text-align: center;
+            border: 1px dashed #d1d5db;
+            border-radius: 4px;
+            margin-top: 8px;
+          }
           .tree-children {
             max-height: 0;
             overflow: hidden;
