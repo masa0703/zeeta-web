@@ -711,7 +711,7 @@ function updateTreeHeader() {
 
   header.innerHTML = `
     <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="/my-page.html" style="color: #667eea; text-decoration: none; font-weight: 600; margin-left: 4px;">
+      <a href="/my-page.html" style="color: #667eea; text-decoration: none; font-weight: 600; margin-left: 16px;">
         ← マイページ
       </a>
       <span style="color: #cbd5e0;">|</span>
