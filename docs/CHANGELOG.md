@@ -19,6 +19,9 @@
   - 視覚的フィードバック改善
     - ghostClass, chosenClass, dragClass でドラッグ中のスタイル強化
     - ドロップ可能エリアの明示
+  - ツリー最後へのドロップを可能に
+    - tree-containerに下部パディング追加
+    - 「ルートの最後にドロップ」ガイド表示
 
 ### 修正ファイル
 - `src/index.tsx` - position更新APIを追加、CSSスタイル追加
