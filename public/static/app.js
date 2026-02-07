@@ -2172,6 +2172,40 @@ function renderEditor(node = null, parents = []) {
 
   // EasyMDEの変更監視
   window.currentEditor.codemirror.on('change', checkDirty)
+
+  // 閲覧者の場合はボタンを無効化
+  if (currentUserRole === 'viewer') {
+    const deleteBtn = document.getElementById('delete-node-btn')
+    const saveBtn = document.getElementById('save-node-btn')
+    const titleInput = document.getElementById('node-title')
+    const authorSelect = document.getElementById('node-author')
+
+    if (deleteBtn) {
+      deleteBtn.disabled = true
+      deleteBtn.style.opacity = '0.5'
+      deleteBtn.style.cursor = 'not-allowed'
+    }
+    if (saveBtn) {
+      saveBtn.disabled = true
+      saveBtn.style.opacity = '0.5'
+      saveBtn.style.cursor = 'not-allowed'
+    }
+    if (titleInput) {
+      titleInput.disabled = true
+      titleInput.style.backgroundColor = '#f7fafc'
+    }
+    if (authorSelect) {
+      authorSelect.disabled = true
+      authorSelect.style.backgroundColor = '#f7fafc'
+    }
+
+    // 親ノード削除ボタンも無効化
+    document.querySelectorAll('.remove-parent-btn').forEach(btn => {
+      btn.disabled = true
+      btn.style.opacity = '0.5'
+      btn.style.cursor = 'not-allowed'
+    })
+  }
 }
 
 async function saveCurrentNode() {
