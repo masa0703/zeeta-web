@@ -1698,6 +1698,44 @@ async function handleParentChange(nodeId, fromContainer, toContainer, newIndex) 
   }
 }
 
+// ノードを新しい親に移動（ドロップオンノード時）
+async function moveNodeToNewParent(nodeId, newParentId) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    await fetchNodes()
+    return
+  }
+
+  showLoading()
+  try {
+    // 元のコンテナから親IDを取得
+    const fromContainer = window.dragFromContainer
+    const oldParentId = fromContainer && fromContainer.id !== 'tree-container'
+      ? parseInt(fromContainer.dataset.parent)
+      : null
+
+    // 元の親からの関係を削除（ルートノード以外の場合）
+    if (oldParentId !== null) {
+      await axios.delete(`/api/trees/${currentTreeId}/relations/${oldParentId}/${nodeId}`)
+    }
+
+    // 新しい親への関係を追加
+    await axios.post(`/api/trees/${currentTreeId}/relations`, {
+      parent_node_id: newParentId,
+      child_node_id: nodeId
+    })
+
+    await fetchNodes()
+    showToast('ノードを移動しました', 'success')
+  } catch (error) {
+    console.error('Failed to move node:', error)
+    showToast('ノードの移動に失敗しました', 'error')
+    await fetchNodes()
+  } finally {
+    hideLoading()
+  }
+}
+
 // ノード上へのドロップゾーンを有効化
 function enableNodeDropZones(draggedNodeId) {
   document.querySelectorAll('.tree-item').forEach(item => {
@@ -1740,8 +1778,8 @@ function enableNodeDropZones(draggedNodeId) {
       // 対象ノードを展開
       expandedNodes.add(targetNodeId)
 
-      // 親子関係を追加（リレーションベース）
-      await addRelation(targetNodeId, draggedNodeId)
+      // 元の親からの関係を削除してから新しい親への関係を追加（移動）
+      await moveNodeToNewParent(draggedNodeId, targetNodeId)
     })
   })
 }
