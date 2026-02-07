@@ -2039,11 +2039,11 @@ function renderEditor(node = null, parents = []) {
                  value="${escapeHtml(node.title)}"
                  class="flex-1 px-4 py-2 text-lg font-medium border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                  placeholder="タイトル">
-          <button id="delete-node-btn" class="p-2 bg-red-500 text-white rounded hover:bg-red-600" title="削除">
+          <button id="delete-node-btn" class="p-2 bg-red-500 text-white rounded hover:bg-red-600" title="delete node">
             <i class="fas fa-trash"></i>
           </button>
           <div class="text-center">
-            <button id="save-node-btn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600" title="保存 (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)">
+            <button id="save-node-btn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600" title="save node (${navigator.platform.includes('Mac') ? 'cmd' : 'ctrl'}+enter)">
               <i class="fas fa-save"></i>
             </button>
           </div>
