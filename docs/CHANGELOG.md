@@ -22,10 +22,13 @@
   - ツリー最後へのドロップを可能に
     - tree-containerに下部パディング追加
     - 「ルートの最後にドロップ」ガイド表示
+  - ドロップ動作を「移動」に統一
+    - ノード上へのドロップ時に元の親関係を削除
+    - 親追加ではなく親変更として動作
 
 ### 修正ファイル
 - `src/index.tsx` - position更新APIを追加、CSSスタイル追加
-- `public/static/app.js` - reorderNodes関数をツリースコープAPIに対応、handleParentChange関数追加
+- `public/static/app.js` - reorderNodes関数をツリースコープAPIに対応、handleParentChange関数追加、moveNodeToNewParent関数追加
 
 ---
 
