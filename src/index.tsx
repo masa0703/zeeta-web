@@ -1779,6 +1779,95 @@ app.delete('/api/trees/:tree_id/relations/:parent_id/:child_id', authMiddleware,
   }
 })
 
+// Update relation position (for drag and drop reordering)
+app.patch('/api/trees/:tree_id/relations/:parent_id/:child_id/position', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const parentId = parseInt(c.req.param('parent_id'))
+    const childId = parseInt(c.req.param('child_id'))
+    const body = await c.req.json()
+    const { position } = body
+
+    if (isNaN(treeId) || isNaN(parentId) || isNaN(childId)) {
+      return c.json({ success: false, error: 'Invalid IDs' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    // Verify parent node belongs to the tree
+    const parentNode = await c.env.DB.prepare('SELECT tree_id FROM nodes WHERE id = ?')
+      .bind(parentId)
+      .first<{ tree_id: number }>()
+
+    if (!parentNode || parentNode.tree_id !== treeId) {
+      return c.json({ success: false, error: 'Parent node not found in this tree' }, 404)
+    }
+
+    // Update position
+    await c.env.DB.prepare(
+      'UPDATE node_relations SET position = ? WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(position || 0, parentId, childId).run()
+
+    const updated = await c.env.DB.prepare(
+      'SELECT * FROM node_relations WHERE parent_node_id = ? AND child_node_id = ?'
+    ).bind(parentId, childId).first()
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Failed to update relation position:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Update node root_position (for drag and drop reordering of root nodes)
+app.patch('/api/trees/:tree_id/nodes/:id/root-position', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('tree_id'))
+    const nodeId = parseInt(c.req.param('id'))
+    const body = await c.req.json()
+    const { root_position } = body
+
+    if (isNaN(treeId) || isNaN(nodeId)) {
+      return c.json({ success: false, error: 'Invalid IDs' }, 400)
+    }
+
+    // Check if user can edit this tree
+    const canEdit = await canEditTree(c.env.DB, treeId, user.user_id)
+    if (!canEdit) {
+      return c.json({ success: false, error: 'You do not have permission to edit this tree' }, 403)
+    }
+
+    // Verify node belongs to the tree
+    const node = await c.env.DB.prepare('SELECT tree_id FROM nodes WHERE id = ?')
+      .bind(nodeId)
+      .first<{ tree_id: number }>()
+
+    if (!node || node.tree_id !== treeId) {
+      return c.json({ success: false, error: 'Node not found in this tree' }, 404)
+    }
+
+    // Update root_position
+    await c.env.DB.prepare(
+      'UPDATE nodes SET root_position = ? WHERE id = ?'
+    ).bind(root_position || 0, nodeId).run()
+
+    const updated = await c.env.DB.prepare(
+      'SELECT * FROM nodes WHERE id = ?'
+    ).bind(nodeId).first()
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Failed to update node root_position:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ===============================
 // Legacy Node API Routes (for backward compatibility)
 // ===============================
@@ -2190,6 +2279,38 @@ const getEditorHTML = () => `
           .tree-item.duplicate-active {
             border: 1px dashed #c084fc;
             border-radius: 4px;
+          }
+          /* SortableJS ドラッグ&ドロップスタイル */
+          .sortable-ghost {
+            opacity: 0.4;
+            background-color: #dbeafe;
+            border: 2px dashed #3b82f6;
+            border-radius: 4px;
+          }
+          .sortable-chosen {
+            background-color: #eff6ff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          }
+          .sortable-drag {
+            opacity: 0.9;
+            background-color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+          }
+          body.is-dragging .tree-item:not(.sortable-chosen) {
+            transition: transform 0.2s;
+          }
+          body.is-dragging .tree-children {
+            min-height: 40px;
+            border: 1px dashed transparent;
+          }
+          body.is-dragging .tree-children:empty::before {
+            content: 'ここにドロップ';
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 8px;
+            display: block;
+            text-align: center;
           }
           .tree-item.dragging {
             opacity: 0.5;

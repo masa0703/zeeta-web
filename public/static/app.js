@@ -1144,6 +1144,11 @@ async function moveNode(nodeId, newParentId, newPosition) {
 
 // 同じ階層の全ノードの position を一括更新
 async function reorderNodes(container) {
+  if (!currentTreeId) {
+    console.error('No tree selected')
+    return false
+  }
+
   showLoading()
   try {
     // コンテナ内の全ノードを取得（DOM順）
@@ -1166,16 +1171,16 @@ async function reorderNodes(container) {
       const nodeId = parseInt(treeItem.dataset.nodeId)
 
       if (parentId !== null) {
-        // 親子関係のposition更新
+        // 親子関係のposition更新（ツリースコープAPI）
         updates.push(
-          axios.patch(`/api/relations/${parentId}/${nodeId}/position`, {
+          axios.patch(`/api/trees/${currentTreeId}/relations/${parentId}/${nodeId}/position`, {
             position: index
           })
         )
       } else {
-        // ルートノードのroot_position更新
+        // ルートノードのroot_position更新（ツリースコープAPI）
         updates.push(
-          axios.patch(`/api/nodes/${nodeId}/root-position`, {
+          axios.patch(`/api/trees/${currentTreeId}/nodes/${nodeId}/root-position`, {
             root_position: index
           })
         )
@@ -1588,79 +1593,109 @@ function attachTreeEventListeners() {
 }
 
 function setupDragAndDrop() {
-  // ルートレベルのSortable
-  const treeContainer = document.getElementById('tree-container')
-
-  new Sortable(treeContainer, {
-    animation: 150,
+  // 共通のSortable設定
+  const sortableOptions = {
+    animation: 200,
     handle: '.drag-handle',
     draggable: '[data-node-group]',
-    ghostClass: 'dragging',
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
     group: 'nested',
     fallbackOnBody: true,
-    swapThreshold: 0.65,
+    swapThreshold: 0.5,
+    invertSwap: true,
+    delay: 50,
+    delayOnTouchOnly: true,
     onStart: function (evt) {
       const treeItem = evt.item.querySelector('.tree-item')
       const nodeId = parseInt(treeItem.dataset.nodeId)
       window.currentDraggedNodeId = nodeId
+      window.dragFromContainer = evt.from
 
       // ノード上へのドロップ検出を有効化
       setTimeout(() => enableNodeDropZones(nodeId), 100)
+
+      // ドラッグ中のビジュアルフィードバック
+      document.body.classList.add('is-dragging')
     },
     onEnd: async function (evt) {
       disableNodeDropZones()
+      document.body.classList.remove('is-dragging')
 
       // ノード上にドロップされた場合は処理をスキップ
       if (window.droppedOnNode) {
         window.droppedOnNode = false
         window.currentDraggedNodeId = null
+        window.dragFromContainer = null
         return
       }
 
+      const nodeId = window.currentDraggedNodeId
       window.currentDraggedNodeId = null
 
-      // コンテナ内の全ノードの順序を更新
-      await reorderNodes(evt.to)
+      // 異なるコンテナ間の移動を検出
+      if (evt.from !== evt.to) {
+        // 親が変わった場合は関係を更新
+        await handleParentChange(nodeId, evt.from, evt.to, evt.newIndex)
+      } else {
+        // 同じコンテナ内の並び替え
+        await reorderNodes(evt.to)
+      }
+
+      window.dragFromContainer = null
     }
-  })
+  }
+
+  // ルートレベルのSortable
+  const treeContainer = document.getElementById('tree-container')
+  new Sortable(treeContainer, sortableOptions)
 
   // 子要素のSortable（展開状態に関わらず全ての.tree-childrenに設定）
   document.querySelectorAll('.tree-children').forEach(container => {
-    const parentId = parseInt(container.dataset.parent)
-
-    new Sortable(container, {
-      animation: 150,
-      handle: '.drag-handle',
-      draggable: '[data-node-group]',
-      ghostClass: 'dragging',
-      group: 'nested',
-      fallbackOnBody: true,
-      swapThreshold: 0.65,
-      onStart: function (evt) {
-        const treeItem = evt.item.querySelector('.tree-item')
-        const nodeId = parseInt(treeItem.dataset.nodeId)
-        window.currentDraggedNodeId = nodeId
-
-        // ノード上へのドロップ検出を有効化
-        setTimeout(() => enableNodeDropZones(nodeId), 100)
-      },
-      onEnd: async function (evt) {
-        disableNodeDropZones()
-
-        // ノード上にドロップされた場合は処理をスキップ
-        if (window.droppedOnNode) {
-          window.droppedOnNode = false
-          window.currentDraggedNodeId = null
-          return
-        }
-
-        window.currentDraggedNodeId = null
-
-        // コンテナ内の全ノードの順序を更新
-        await reorderNodes(evt.to)
-      }
-    })
+    new Sortable(container, sortableOptions)
   })
+}
+
+// 親が変わった場合の処理
+async function handleParentChange(nodeId, fromContainer, toContainer, newIndex) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    await fetchNodes()
+    return
+  }
+
+  showLoading()
+  try {
+    // 元の親IDを取得
+    const oldParentId = fromContainer.id === 'tree-container' ? null : parseInt(fromContainer.dataset.parent)
+    // 新しい親IDを取得
+    const newParentId = toContainer.id === 'tree-container' ? null : parseInt(toContainer.dataset.parent)
+
+    // 元の親からの関係を削除（ルートノード以外の場合）
+    if (oldParentId !== null) {
+      await axios.delete(`/api/trees/${currentTreeId}/relations/${oldParentId}/${nodeId}`)
+    }
+
+    // 新しい親への関係を追加（ルートノードにする場合以外）
+    if (newParentId !== null) {
+      await axios.post(`/api/trees/${currentTreeId}/relations`, {
+        parent_node_id: newParentId,
+        child_node_id: nodeId
+      })
+    }
+
+    // 移動先コンテナ内の順序を更新
+    await reorderNodes(toContainer)
+
+    showToast('ノードを移動しました', 'success')
+  } catch (error) {
+    console.error('Failed to move node:', error)
+    showToast('ノードの移動に失敗しました', 'error')
+    await fetchNodes()
+  } finally {
+    hideLoading()
+  }
 }
 
 // ノード上へのドロップゾーンを有効化

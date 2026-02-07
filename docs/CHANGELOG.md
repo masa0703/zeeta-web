@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-07 (7)
+
+### 実装内容
+- **S100 ドラッグ&ドロップ安定化**:
+  - ツリースコープのposition更新APIを追加
+    - `PATCH /api/trees/:id/relations/:parent/:child/position`
+    - `PATCH /api/trees/:id/nodes/:id/root-position`
+  - SortableJS設定を改善
+    - swapThreshold: 0.65 → 0.5（より正確な配置）
+    - invertSwap: true（より自然なスワップ動作）
+    - delay: 50ms（誤操作防止）
+  - 異なる親への移動に対応（関係の削除・追加を自動処理）
+  - 視覚的フィードバック改善
+    - ghostClass, chosenClass, dragClass でドラッグ中のスタイル強化
+    - ドロップ可能エリアの明示
+
+### 修正ファイル
+- `src/index.tsx` - position更新APIを追加、CSSスタイル追加
+- `public/static/app.js` - reorderNodes関数をツリースコープAPIに対応、handleParentChange関数追加
+
+---
+
 ## 2026-02-07 (6)
 
 ### 実装内容
