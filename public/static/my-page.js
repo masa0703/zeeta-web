@@ -441,6 +441,13 @@ function displayPendingInvitations(invitations) {
         <div class="flex items-center space-x-2">
           <span class="role-badge ${roleClass}" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">${roleName}</span>
           <span class="text-xs text-gray-500 px-2 py-1 bg-yellow-100 rounded">招待中</span>
+          <button
+            onclick="event.stopPropagation(); cancelInvitation(${currentTreeForMembers}, ${invitation.id})"
+            class="text-red-600 hover:text-red-800 ml-1"
+            title="招待を取り消す"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
     `
@@ -532,6 +539,33 @@ async function removeMember(treeId, userId) {
   } catch (error) {
     console.error('Failed to remove member:', error)
     showError('メンバーの削除に失敗しました: ' + error.message)
+  }
+}
+
+/**
+ * Cancel an invitation
+ */
+async function cancelInvitation(treeId, invitationId) {
+  if (!confirm('この招待を取り消しますか？')) {
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/trees/${treeId}/invitations/${invitationId}`, {
+      method: 'DELETE'
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to cancel invitation')
+    }
+
+    showSuccess('招待を取り消しました')
+    await openMemberModal(treeId) // Reload members and invitations
+  } catch (error) {
+    console.error('Failed to cancel invitation:', error)
+    showError('招待の取り消しに失敗しました: ' + error.message)
   }
 }
 

@@ -22,7 +22,8 @@ import {
   createInvitation,
   getInvitationByToken,
   acceptInvitation,
-  getTreeInvitations
+  getTreeInvitations,
+  cancelInvitation
 } from './utils/invitations'
 import { sendInvitationEmail } from './services/email'
 
@@ -1022,6 +1023,50 @@ app.get('/api/trees/:id/invitations', authMiddleware, async (c) => {
     })
   } catch (error) {
     console.error('Failed to get invitations:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// Cancel an invitation (owner/editor only)
+app.delete('/api/trees/:id/invitations/:invitationId', authMiddleware, async (c) => {
+  try {
+    const user = getCurrentUser(c)
+    const treeId = parseInt(c.req.param('id'))
+    const invitationId = parseInt(c.req.param('invitationId'))
+
+    if (isNaN(treeId) || isNaN(invitationId)) {
+      return c.json({ success: false, error: 'Invalid tree ID or invitation ID' }, 400)
+    }
+
+    // Only owner and editors can cancel invitations
+    const canManage = await canManageMembers(c.env.DB, treeId, user.user_id)
+    if (!canManage) {
+      return c.json({ success: false, error: 'Permission denied' }, 403)
+    }
+
+    // Verify the invitation belongs to this tree
+    const invitation = await c.env.DB
+      .prepare('SELECT id, status FROM invitations WHERE id = ? AND tree_id = ?')
+      .bind(invitationId, treeId)
+      .first<{ id: number; status: string }>()
+
+    if (!invitation) {
+      return c.json({ success: false, error: 'Invitation not found' }, 404)
+    }
+
+    if (invitation.status !== 'pending') {
+      return c.json({ success: false, error: 'Only pending invitations can be cancelled' }, 400)
+    }
+
+    // Cancel the invitation
+    await cancelInvitation(c.env.DB, invitationId)
+
+    return c.json({
+      success: true,
+      message: 'Invitation cancelled successfully'
+    })
+  } catch (error) {
+    console.error('Failed to cancel invitation:', error)
     return c.json({ success: false, error: String(error) }, 500)
   }
 })

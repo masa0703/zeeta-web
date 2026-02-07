@@ -361,6 +361,215 @@ function checkDirty() {
   return isDirty
 }
 
+// コンテキストメニュー（右クリックメニュー）
+let contextMenuNodeId = null
+let contextMenuNodePath = null
+
+function createContextMenu() {
+  let menu = document.getElementById('node-context-menu')
+  if (!menu) {
+    menu = document.createElement('div')
+    menu.id = 'node-context-menu'
+    menu.innerHTML = `
+      <div class="context-menu-item" data-action="duplicate">
+        <i class="fas fa-copy"></i>
+        <span>複製</span>
+      </div>
+      <div class="context-menu-separator"></div>
+      <div class="context-menu-item" data-action="copy">
+        <i class="fas fa-clipboard"></i>
+        <span>コピー</span>
+        <span class="context-menu-shortcut">⌘C</span>
+      </div>
+      <div class="context-menu-item" data-action="paste">
+        <i class="fas fa-paste"></i>
+        <span>ペースト</span>
+        <span class="context-menu-shortcut">⌘V</span>
+      </div>
+    `
+    document.body.appendChild(menu)
+
+    // スタイルを追加
+    const style = document.createElement('style')
+    style.textContent = `
+      #node-context-menu {
+        display: none;
+        position: fixed;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        padding: 6px 0;
+        min-width: 180px;
+        z-index: 10000;
+      }
+      #node-context-menu.active {
+        display: block;
+      }
+      .context-menu-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #374151;
+        transition: background 0.15s;
+      }
+      .context-menu-item:hover {
+        background: #f3f4f6;
+      }
+      .context-menu-item.disabled {
+        color: #9ca3af;
+        pointer-events: none;
+      }
+      .context-menu-item i {
+        width: 18px;
+        margin-right: 10px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+      .context-menu-item span:first-of-type {
+        flex: 1;
+      }
+      .context-menu-shortcut {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-left: 16px;
+      }
+      .context-menu-separator {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 4px 0;
+      }
+    `
+    document.head.appendChild(style)
+
+    // メニュー項目のクリック処理
+    menu.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const action = item.dataset.action
+        hideContextMenu()
+        handleContextMenuAction(action)
+      })
+    })
+
+    // 外側クリックで閉じる
+    document.addEventListener('click', hideContextMenu)
+  }
+  return menu
+}
+
+function showContextMenu(e, nodeId, nodePath) {
+  e.preventDefault()
+  e.stopPropagation()
+
+  contextMenuNodeId = nodeId
+  contextMenuNodePath = nodePath
+
+  const menu = createContextMenu()
+
+  // ペーストの有効/無効
+  const pasteItem = menu.querySelector('[data-action="paste"]')
+  if (clipboard) {
+    pasteItem.classList.remove('disabled')
+  } else {
+    pasteItem.classList.add('disabled')
+  }
+
+  // メニュー位置を設定
+  const x = e.clientX
+  const y = e.clientY
+
+  menu.style.left = `${x}px`
+  menu.style.top = `${y}px`
+  menu.classList.add('active')
+
+  // 画面外にはみ出ないよう調整
+  const rect = menu.getBoundingClientRect()
+  if (rect.right > window.innerWidth) {
+    menu.style.left = `${window.innerWidth - rect.width - 10}px`
+  }
+  if (rect.bottom > window.innerHeight) {
+    menu.style.top = `${window.innerHeight - rect.height - 10}px`
+  }
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('node-context-menu')
+  if (menu) {
+    menu.classList.remove('active')
+  }
+}
+
+async function handleContextMenuAction(action) {
+  if (!contextMenuNodeId) return
+
+  switch (action) {
+    case 'duplicate':
+      await duplicateNode(contextMenuNodeId, contextMenuNodePath)
+      break
+    case 'copy':
+      clipboard = contextMenuNodeId
+      showToast('ノードをコピーしました', 'success')
+      break
+    case 'paste':
+      if (clipboard && contextMenuNodeId) {
+        const success = await addRelation(contextMenuNodeId, clipboard)
+        if (success) {
+          expandedNodes.add(contextMenuNodeId)
+          showToast('親子関係を追加しました', 'success')
+          renderTree()
+        }
+      }
+      break
+  }
+}
+
+async function duplicateNode(nodeId, nodePath) {
+  if (!canEdit()) {
+    showToast('編集権限がありません', 'error')
+    return
+  }
+
+  // 元のノードを取得
+  const originalNode = await fetchNodeById(nodeId)
+  if (!originalNode) {
+    showToast('ノードの取得に失敗しました', 'error')
+    return
+  }
+
+  // パスから親IDを取得
+  let parentId = null
+  if (nodePath) {
+    const pathParts = nodePath.split('-')
+    if (pathParts.length > 1) {
+      parentId = parseInt(pathParts[pathParts.length - 2])
+    }
+  }
+
+  showLoading()
+  try {
+    // 複製ノードを作成
+    const duplicatedNode = await createNode({
+      title: `Copy of ${originalNode.title}`,
+      content: originalNode.content || '',
+      author: currentUser?.display_name || currentUser?.email || originalNode.author
+    })
+
+    if (duplicatedNode && parentId) {
+      // 同じ親との関係を追加
+      await addRelation(parentId, duplicatedNode.id)
+      expandedNodes.add(parentId)
+    }
+
+    showToast('ノードを複製しました', 'success')
+  } catch (error) {
+    console.error('Failed to duplicate node:', error)
+    showToast('ノードの複製に失敗しました', 'error')
+  } finally {
+    hideLoading()
+  }
+}
+
 // トースト通知の表示
 function showToast(message, type = 'success', duration = 5000) {
   const toast = document.createElement('div')
@@ -502,7 +711,7 @@ function updateTreeHeader() {
 
   header.innerHTML = `
     <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="/my-page.html" style="color: #667eea; text-decoration: none; font-weight: 600;">
+      <a href="/my-page.html" style="color: #667eea; text-decoration: none; font-weight: 600; margin-left: 4px;">
         ← マイページ
       </a>
       <span style="color: #cbd5e0;">|</span>
@@ -607,6 +816,23 @@ function escapeHtml(text) {
   const div = document.createElement('div')
   div.textContent = text
   return div.innerHTML
+}
+
+/**
+ * Toggle parents accordion
+ */
+function toggleParentsAccordion() {
+  const content = document.getElementById('parents-accordion-content')
+  const icon = document.getElementById('parents-accordion-icon')
+  if (content && icon) {
+    if (content.style.display === 'none') {
+      content.style.display = 'block'
+      icon.style.transform = 'rotate(180deg)'
+    } else {
+      content.style.display = 'none'
+      icon.style.transform = 'rotate(0deg)'
+    }
+  }
 }
 
 // ===============================
@@ -1332,6 +1558,13 @@ function attachTreeEventListeners() {
         selectNode(nodeId, nodePath)
       }
     })
+
+    // 右クリックメニュー
+    item.addEventListener('contextmenu', (e) => {
+      const nodeId = parseInt(item.dataset.nodeId)
+      const nodePath = item.dataset.nodePath
+      showContextMenu(e, nodeId, nodePath)
+    })
   })
 
   // ツリー展開/折りたたみ
@@ -1776,16 +2009,17 @@ function renderEditor(node = null, parents = []) {
 
   const parentsHtml = parents.length > 0 ? `
     <div class="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
-      <div class="flex items-center justify-between mb-2">
-        <label class="text-sm font-medium text-purple-900">
+      <div class="flex items-center justify-between cursor-pointer" onclick="toggleParentsAccordion()">
+        <label class="text-sm font-medium text-purple-900 cursor-pointer">
           <i class="fas fa-sitemap mr-1"></i>親ノード (${parents.length})
         </label>
+        <i id="parents-accordion-icon" class="fas fa-chevron-down text-purple-700 text-xs transition-transform"></i>
       </div>
-      <div class="space-y-1">
+      <div id="parents-accordion-content" class="space-y-1 mt-2" style="display: none;">
         ${parents.map(p => `
           <div class="flex items-center justify-between text-sm bg-white px-2 py-1 rounded">
             <span class="text-purple-700">${escapeHtml(p.title)}</span>
-            <button class="remove-parent-btn text-red-500 hover:text-red-700 text-xs" 
+            <button class="remove-parent-btn text-red-500 hover:text-red-700 text-xs"
                     data-parent-id="${p.id}"
                     title="この親子関係を削除">
               <i class="fas fa-times"></i>
@@ -1798,37 +2032,28 @@ function renderEditor(node = null, parents = []) {
 
   editorPanel.innerHTML = `
     <div class="flex flex-col h-full">
-      <!-- 固定ヘッダー部分 -->
+      <!-- 固定ヘッダー部分（タイトル入力 + ボタン） -->
       <div class="flex-shrink-0 mb-3">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold text-gray-800">ノード詳細</h2>
-          <div class="flex gap-2 items-start">
-            <button id="delete-node-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-              <i class="fas fa-trash mr-2"></i>削除
+        <div class="flex items-center gap-2">
+          <input type="text" id="node-title"
+                 value="${escapeHtml(node.title)}"
+                 class="flex-1 px-4 py-2 text-lg font-medium border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="タイトル">
+          <button id="delete-node-btn" class="p-2 bg-red-500 text-white rounded hover:bg-red-600" title="削除">
+            <i class="fas fa-trash"></i>
+          </button>
+          <div class="text-center">
+            <button id="save-node-btn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600" title="保存 (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)">
+              <i class="fas fa-save"></i>
             </button>
-            <div class="text-center">
-              <button id="save-node-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                <i class="fas fa-save mr-2"></i>保存
-              </button>
-              <p class="text-xs text-gray-400 mt-1">${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter</p>
-            </div>
           </div>
         </div>
       </div>
-      
+
       <!-- スクロール可能なコンテンツエリア -->
       <div class="flex-1 overflow-y-auto space-y-4">
         ${parentsHtml}
-        <!-- タイトル -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            <i class="fas fa-heading mr-1"></i>タイトル
-          </label>
-          <input type="text" id="node-title"
-                 value="${escapeHtml(node.title)}"
-                 class="w-full px-4 py-3 text-lg font-medium border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        </div>
-        
+
         <!-- 内容 (Markdown対応) -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -1907,6 +2132,8 @@ function renderEditor(node = null, parents = []) {
     autosave: {
       enabled: false
     },
+    minHeight: '200px',
+    maxHeight: '400px',
     toolbar: [
       "bold", "italic", "heading", "|",
       "quote", "unordered-list", "ordered-list", "|",
@@ -1933,6 +2160,15 @@ function renderEditor(node = null, parents = []) {
       return plainText
     }
   })
+
+  // エディタエリアをリサイズ可能にする
+  const editorWrapper = document.querySelector('.EasyMDEContainer')
+  if (editorWrapper) {
+    editorWrapper.style.resize = 'vertical'
+    editorWrapper.style.overflow = 'auto'
+    editorWrapper.style.minHeight = '250px'
+    editorWrapper.style.maxHeight = '600px'
+  }
 
   // EasyMDEの変更監視
   window.currentEditor.codemirror.on('change', checkDirty)
@@ -2049,7 +2285,16 @@ function escapeHtml(text) {
 
 function formatDate(dateString) {
   if (!dateString) return '-'
-  const date = new Date(dateString)
+  // SQLiteのCURRENT_TIMESTAMPはUTCで保存されるため、UTCとして解釈させる
+  let normalizedDate = String(dateString).trim()
+  // タイムゾーン情報がない場合はUTCとして扱う（末尾にZを追加）
+  if (!normalizedDate.endsWith('Z') && !normalizedDate.includes('+') && !normalizedDate.includes('-', 10)) {
+    // スペース区切りをTに置換
+    normalizedDate = normalizedDate.replace(' ', 'T')
+    // Zを追加してUTCとして解釈させる
+    normalizedDate = normalizedDate + 'Z'
+  }
+  const date = new Date(normalizedDate)
   return date.toLocaleString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
